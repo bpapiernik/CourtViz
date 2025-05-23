@@ -34,7 +34,7 @@ export default function Home() {
       <section>
         <h2 className="text-2xl font-semibold mb-1">👋 About Me</h2>
         <div className="flex flex-col md:flex-row gap-6 items-center mt-4">
-          <img src="/BP.png" alt="Brian Papiernik" className="h-40 w-40 rounded-full border object-cover" />
+          <img src="/brian.png" alt="Brian Papiernik" className="h-40 w-40 rounded-full border object-cover" />
           <p className="text-lg leading-relaxed">
             My names is Brian Papiernik — a sports data scientist with experience across baseball, basketball, and multi-sport performance analysis.
             I’ve worked as a Baseball Technology Operator for the Tampa Bay Rays, a Baseball Student Manager with Notre Dame Baseball, and hold a Master’s degree in Sports Analytics from Notre Dame.
