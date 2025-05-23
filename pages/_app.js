@@ -1,11 +1,13 @@
-import NavBar from '../components/NavBar';     // ✅ new NavBar import
-import '../styles/globals.css';                // ✅ keep global styles
+import NavBar from '../components/NavBar';
+import '../styles/globals.css';
+import { Analytics } from '@vercel/analytics/react'; // ✅ import this
 
 export default function App({ Component, pageProps }) {
   return (
     <>
-      <NavBar />                               {/* navbar appears on every page */}
-      <Component {...pageProps} />            {/* actual page content */}
+      <NavBar />
+      <Component {...pageProps} />
+      <Analytics /> {/* ✅ include this at the bottom */}
     </>
   );
 }
