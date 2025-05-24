@@ -11,7 +11,7 @@ export default function NavBar() {
         <Link href="/finder">Player Finder</Link>
         <Link href="/fieldviz">FieldViz</Link>
         <Link href="/blogs">Blogs</Link>
-        <Link href="/portfolio">Brian's Portfolio</Link>
+        <Link href="/portfolio">Brian&apos;s Portfolio</Link>
       </div>
 
       <div className="flex items-center gap-4">
