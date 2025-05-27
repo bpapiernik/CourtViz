@@ -136,8 +136,8 @@ export default function InjuryPrevention() {
       <Image
       src="/images/logistic.png"
       alt="Logistic Regression Values"
-      width={800}
-      height={400}
+      width={400}
+      height={200}
       className="rounded shadow-md mb-6"
       />
       <p className="mb-4">
@@ -146,8 +146,8 @@ export default function InjuryPrevention() {
       <Image
       src="/images/impplot.png"
       alt="XGBoost Feature Importance"
-      width={800}
-      height={400}
+      width={400}
+      height={200}
       className="rounded shadow-md mb-6"
       />
 
@@ -158,8 +158,8 @@ export default function InjuryPrevention() {
       <Image
       src="/images/shap.png"
       alt="SHAP Visual Values"
-      width={800}
-      height={400}
+      width={400}
+      height={200}
       className="rounded shadow-md mb-6"
       />
 
@@ -170,8 +170,8 @@ export default function InjuryPrevention() {
       <Image
       src="/images/noah_usage.png"
       alt="Joakim Noah Usage Rate Spike"
-      width={800}
-      height={400}
+      width={400}
+      height={200}
       className="rounded shadow-md mb-6"
       />
       <p className="mb-4">
@@ -180,8 +180,8 @@ export default function InjuryPrevention() {
       <Image
       src="/images/noah_usage_pie.png"
       alt="Joakim Noah Usage vs PIE"
-      width={800}
-      height={400}
+      width={400}
+      height={200}
       className="rounded shadow-md mb-6"
       />
       <p className="mb-4">
@@ -190,8 +190,8 @@ export default function InjuryPrevention() {
       <Image
       src="/images/snell.png"
       alt="Tony Snell Usage vs PIE"
-      width={800}
-      height={400}
+      width={400}
+      height={200}
       className="rounded shadow-md mb-6"
       />
       <p className="mb-4">
@@ -200,8 +200,8 @@ export default function InjuryPrevention() {
       <Image
       src="/images/rose_usage.png"
       alt="Derrick Rose Usage Spike and Injury"
-      width={800}
-      height={400}
+      width={400}
+      height={200}
       className="rounded shadow-md mb-6"
       />
       <p className="mb-4">
@@ -210,8 +210,8 @@ export default function InjuryPrevention() {
       <Image
       src="/images/rose_usage_pie.png"
       alt="Derrick Rose Usage vs PIE"
-      width={800}
-      height={400}
+      width={400}
+      height={200}
       className="rounded shadow-md mb-6"
       />
 
@@ -221,8 +221,8 @@ export default function InjuryPrevention() {
       <Image
       src="/images/moore_usage.png"
       alt="ETwaun Moore Usage Rate and Injury"
-      width={800}
-      height={400}
+      width={400}
+      height={200}
       className="rounded shadow-md mb-6"
       />
       <p className="mb-4">
@@ -231,8 +231,8 @@ export default function InjuryPrevention() {
       <Image
       src="/images/moore_usage_pie.png"
       alt="ETwaun Moore Usage vs PIE"
-      width={800}
-      height={400}
+      width={400}
+      height={200}
       className="rounded shadow-md mb-6"
       />
       <p className="mb-4">
@@ -274,15 +274,15 @@ export default function InjuryPrevention() {
       <Image
       src="/images/updated_impplot.png"
       alt="SHAP Summary Plot - Expanded Dataset"
-      width={800}
-      height={400}
+      width={400}
+      height={200}
       className="rounded shadow-md mb-6"
       />
       <Image
       src="/images/updated_shap.png"
       alt="SHAP Feature Importance Bar Chart - Expanded Dataset"
-      width={800}
-      height={400}
+      width={400}
+      height={200}
       className="rounded shadow-md mb-6"
       />
 
