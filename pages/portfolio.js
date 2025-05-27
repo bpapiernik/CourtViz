@@ -21,19 +21,17 @@ export default function Portfolio() {
           </p>
         </div>
 
-        {/* Add more project cards here */}
-        {/* Example: 
+        {/* NBA Injury Prevention Project */}
         <div className="border rounded-lg p-4 shadow-md hover:shadow-lg transition">
           <h2 className="text-xl font-semibold mb-2">
-            <Link href="/portfolio/heliocentric-shot-selection" className="text-blue-600 hover:underline">
-              Smart Shot Selection via Heliocentric Modeling
+            <Link href="/portfolio/injury-prevention" className="text-blue-600 hover:underline">
+              NBA Player Tracking Injury Prevention Project
             </Link>
           </h2>
           <p className="text-gray-700">
-            Analyzing missed opportunities in NBA playmaking with expected points models and tracking data.
+            Modeling injury risk using SportVU player tracking data and play-by-play usage patterns. Applied XGBoost and Logistic Regression with SHAP analysis to recommend load management strategies.
           </p>
-        </div> 
-        */}
+        </div>
       </div>
     </div>
   );
