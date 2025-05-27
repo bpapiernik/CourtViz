@@ -63,7 +63,7 @@ export default function InjuryPrevention() {
         To build our predictive model, we required linking multiple different datasets together that we found through an NBA HoopR package (NBA Box Score Player Usage Statistics and Play by Play datasets), an injury dataset found on Kaggle with injury reports dating back to 2008, and game tracking data for the 39 Bulls Games for the 2015-2016 NBA Season.The complete clean dataset that would be used to predict injuries required the linkage of multiple datasets which is shown in the visual to the right. The final merged dataset consisted of 55 variables reflecting a comprehensive mix of game performance usage metrics, player movements, historical injury data, and unique GameIDs, PlayerIDs, and EventIDs. These variables include player velocity, acceleration, distance covered on a play, time on the court, and detailed injury history which are essential for understanding the dynamic between player activities and potential injury risk. The final merged dataset spanned 83,000 rows which represents detailed play-by-play data for each of the five Bulls players on the court during the 39 games of the season.  Each row captures a snapshot of a specific game event that occurs every 0.04 seconds.
       </p>
       <Image
-      src="https://github.com/bpapiernik/NBA-Player-Tracking-Injury-Project/assets/135991331/3a3a71ae-f6a4-41f8-80ec-2dbb6a27e861"
+      src="/images/schema.png"
       alt="Data schema diagram for injury modeling"
       width={800}
       height={500}
@@ -77,7 +77,7 @@ export default function InjuryPrevention() {
       </p>
       <p className="mb-2 font-medium">Usage Rate Formula:</p>
       <Image
-      src="https://github.com/bpapiernik/NBA-Player-Tracking-Injury-Project/assets/135991331/9e9225c8-bb21-4323-bda7-f917e2e3a00a"
+      src="/images/usage.png"
       alt="USG% Formula"
       width={600}
       height={60}
@@ -85,7 +85,7 @@ export default function InjuryPrevention() {
       />
       <p className="mb-2 font-medium">PIE Formula:</p>
       <Image
-      src="https://github.com/bpapiernik/NBA-Player-Tracking-Injury-Project/assets/135991331/90a26cdd-9fb6-4c8f-a6c4-51493ebd373d"
+      src="/images/pie.png"
       alt="PIE Formula"
       width={800}
       height={60}
@@ -134,7 +134,7 @@ export default function InjuryPrevention() {
         <strong>Logistic Regression:</strong> For our logistic regression, we created a logistic regression model for the relationship between our dependent variable (injury likelihood “player_inj”) and multiple independent variables (various player tracking metrics and play-by-play usage performance metrics). Unlike our XGBoost model that requires complex hyperparameter tuning, our logistic regression offers a more straightforward statistical approach. The logistic regression output provides coefficients for each independent variable, which indicates the direction and strength of influence on predicting the likelihood of injury. In this specific model, we observed that certain variables had statistically significant effects on the likelihood of injury. Notably, our deceleration count greater than -7 ft2/sec, our mean acceleration category, and velocity count greater than 7 ft/sec and 10 ft/sec were proven to be statistically significant.  In order, the p-value for these variables were 0.0141, 0.0225, 0.0709, and 0.0619. The two variables with positive coefficients that increased the likelihood of injury that were statistically significant were the mean acceleration category and the velocity count greater than 7 ft/sec. This insight means that maintaining a velocity above 7 ft/sec can increase the likelihood of injury and sporadic sprinting in order to maintain high acceleration numbers will increase the likelihood of injury  The two variables with negative coefficients that decreased the likelihood of injury were our deceleration count greater than -7 ft/sec and our velocity count greater than 10 ft/sec. This insight might indicate that stopping your movements with a deceleration lower than -7 ft2/sec decreases the likelihood of injury. Deceleration might have less wear on the body than acceleration. Also, constantly sprinting above 10 ft/sec also decreases the likelihood of injury which might indicate that these players had better fitness than other injured players. It is important to not that the logistic regression model at an AIC value of 341.4 which suggests the model&apos;s effectiveness of explaining the variability of the response data while penalizing for the number of predictors.
       </p>
       <Image
-      src="https://github.com/bpapiernik/NBA-Player-Tracking-Injury-Project/assets/135991331/a870d73f-aa7b-4788-afc1-3ddc6d1ded50"
+      src="/images/logistic.png"
       alt="Logistic Regression Values"
       width={800}
       height={400}
@@ -144,7 +144,7 @@ export default function InjuryPrevention() {
         <strong>XGBoost:</strong> The XGBoost method was used to predict the likelihood of injury binary variable based on some complicated relationships between the play-by-play usage performance metrics and our various player tracking metrics. For our XGBoost, the hyperparameters that required tuning included learning rate (0.3), max depth (15), minimum child weight (15), gamma (0.1), subsample (0.6), and column sample by tree (0.6). These hyperparameters were tuned based on the highest Area Under Curve (AUC) for each hyperparameter. The output for our XGBoost model creates a probability of a binary variable (likelihood of injury) based on the hyperparameters above and the play-by-play usage performance metrics and our various player tracking metrics. The most important variables are in the visualization to the right. The top 10 most important variables in order are counting the number of acceleration category changes between 0.04 seconds time difference (6 to 1, 6 to 2, 5 to 1, 1 to 5, 2 to 6, 1 to 6), cumulative usage, total time of  possession, deceleration greater than -7 ft2/sec, time on defense, net efficiency rating, time on offense, velocity count greater than 10 ft/sec, cumulative PACE, and mean acceleration. The AUC when tuning the model was around 0.80. The model’s ability to adjust the probability of injury based on these metrics allows for a unique understanding of injury risk factors specific to NBA players. This can be instrumental in developing strategies for injury prevention and player load management. This modeling approach not only identifies at-risk individuals, but also helps in planning the workload and recovery protocols, thereby optimizing player performance and their career longevity.
       </p>
       <Image
-      src="https://github.com/bpapiernik/NBA-Player-Tracking-Injury-Project/assets/135991331/11d3c446-d85f-4766-9f84-1ca068c40846"
+      src="/images/impplot.png"
       alt="XGBoost Feature Importance"
       width={800}
       height={400}
@@ -156,7 +156,7 @@ export default function InjuryPrevention() {
         The SHAP visual that is provided on the right is based on the XGBoost. The SHAP visual is color coded where purple indicates high values and yellow indicates low values. It is interesting to see the distribution of how high and low values for these specific variables affect the likelihood of injury. Dots to the right of the center increase the likelihood of injury where dots to the left of the center decrease the likelihood of injury. The top influencers for variables affecting injury are max total difference, time on offense, deceleration count greater than -7 ft2/sec, and mean acceleration. Max Total Distance has a surprising impact on the model&apos;s predictions. This is suggesting that greater distances covered may actually decrease the likelihood of injury. We believe that this insight indicates that players conditioned to endure more extensive physical activity might be less prone to injuries, Similarly, longer durations spent on offensive plays also appear to reduce the risk of injury which can mean that defensive plays cause more collisions for your players which can impact the likelihood of injuries. This insight means that offensive gameplay, which has controlled strategic movements, causes fewer risks than more chaotic defensive play. Acceleration metrics such as Acc Low 7 and Mean Acceleration show that lower rates of acceleration are associated with reduced injury risks. This supports the notion that less explosive and sudden movements are generally safer for athletes. Such a trend might reflect a strategic approach to gameplay and training against these sudden movements where steady and controlled movements are emphasized over quick movements that have higher potential to cause bodily harm. This understanding could influence training and gameplay strategies, promoting techniques that prioritize sustainability over short-term performance bursts. This can potentially enhancing player&apos;s career length and reducing injury incidents.
       </p>
       <Image
-      src="https://github.com/bpapiernik/NBA-Player-Tracking-Injury-Project/assets/135991331/fe888919-0bf3-48d6-a2ec-e89b719615fe"
+      src="/images/shap.png"
       alt="SHAP Visual Values"
       width={800}
       height={400}
@@ -168,7 +168,7 @@ export default function InjuryPrevention() {
         Joakim Noah&apos;s usage rate was pretty stable and was in a relatively uniform range of values for the first half of the data points. However, shortly after the halfway point, he had a huge spike in usage rate, which was almost immediately followed by an injury. This is just one case study, but it is interesting to see that an injury came right after a significant change from his usual usage rate range.
       </p>
       <Image
-      src="https://github.com/bpapiernik/NBA-Player-Tracking-Injury-Project/assets/135991331/bd8d4a03-a96e-4ff5-9270-4b39f5f269cc"
+      src="/images/noah_usage.png"
       alt="Joakim Noah Usage Rate Spike"
       width={800}
       height={400}
@@ -178,7 +178,7 @@ export default function InjuryPrevention() {
         The graphic shows that Joakim Noah&apos;s usage rate and PIE are usually peaking at different times. In fact, there seems to be a lag between the two variables. One would typically expect both of these stats to peak and valley together, as PIE has all of the same variables going into its formula, but with defensive metrics added on as well. This suggests that his defensive impact does not necessarily happen at the same time as his offensive impact. Since Joakim Noah was an exceptional defender, he may exhibit different tendencies in these two metrics from offense minded players. 
       </p>
       <Image
-      src="https://github.com/bpapiernik/NBA-Player-Tracking-Injury-Project/assets/135991331/d18ac5a4-de21-425e-ab70-c954b53fd0ad"
+      src="/images/noah_usage_pie.png"
       alt="Joakim Noah Usage vs PIE"
       width={800}
       height={400}
@@ -188,7 +188,7 @@ export default function InjuryPrevention() {
         Tony Snell&apos;s usage and PIE curves, in contrast, follow the expected pattern—both metrics peak and valley together, showing how most players&apos; offensive and overall impact are closely aligned.
       </p>
       <Image
-      src="https://github.com/bpapiernik/NBA-Player-Tracking-Injury-Project/assets/135991331/698b1ea6-d543-4136-b7e3-a30215b20a33"
+      src="/images/snell.png"
       alt="Tony Snell Usage vs PIE"
       width={800}
       height={400}
@@ -198,7 +198,7 @@ export default function InjuryPrevention() {
         Derrick Rose&apos;s usage rate was relatively high throughout the season, as one would expect because he was the main cog in the Bulls offense this season. However, just like with Joakim Noah&apos;s injury, Rose got hurt shortly after his highest peak in usage rate as well. Two of the team&apos;s biggest stars and important players suffered injuries shortly after their moment of highest usage on offense during the season. 
       </p>
       <Image
-      src="https://github.com/bpapiernik/NBA-Player-Tracking-Injury-Project/assets/135991331/15e0dc1c-5492-42df-999c-46bfc0654943"
+      src="/images/rose_usage.png"
       alt="Derrick Rose Usage Spike and Injury"
       width={800}
       height={400}
@@ -208,7 +208,7 @@ export default function InjuryPrevention() {
         Rose&apos;s PIE closely mirrored his usage rate, reinforcing the idea that his value was concentrated on the offensive end. This correlation aligns with what we would expect from a high-volume scoring guard.
       </p>
       <Image
-      src="https://github.com/bpapiernik/NBA-Player-Tracking-Injury-Project/assets/135991331/31c725b8-f4ca-42ff-934e-416b50f03f5a"
+      src="/images/rose_usage_pie.png"
       alt="Derrick Rose Usage vs PIE"
       width={800}
       height={400}
@@ -219,7 +219,7 @@ export default function InjuryPrevention() {
         E&apos;Twaun Moore&apos;s usage rate was in the range between about 0.03 and 0.25 for most of the first half of the data points, and then sees a huge surge that goes to almost 0.40. Shortly after this outlier of a peak, Moore suffered an injury. The same pattern can be seen in a lot of these graphs and usage rate seems to be a more and more telling predictor of injury. 
       </p>
       <Image
-      src="https://github.com/bpapiernik/NBA-Player-Tracking-Injury-Project/assets/135991331/5820c6dd-e607-4b32-952e-e1b12dcbede0"
+      src="/images/moore_usage.png"
       alt="ETwaun Moore Usage Rate and Injury"
       width={800}
       height={400}
@@ -229,7 +229,7 @@ export default function InjuryPrevention() {
         Moore&apos;s usage rate and PIE, for the most part, were in sync and peaked together at the same time. This concurs with all of the other players&apos; usage rate vs PIE graphs, besides Joakim Noah, which suggests that usage rate and PIE are heavily positively correlated in most cases. Exceptions like Joakim Noah should be taken with a grain of salt and have their play style factor into the correlation between the two variables. 
       </p>
       <Image
-      src="https://github.com/bpapiernik/NBA-Player-Tracking-Injury-Project/assets/135991331/75346558-507f-492a-9ab2-aada51c99897"
+      src="/images/moore_usage_pie.png"
       alt="ETwaun Moore Usage vs PIE"
       width={800}
       height={400}
@@ -272,14 +272,14 @@ export default function InjuryPrevention() {
         One example of these refined insights is velo_high_15, which emerged as the most important variable with a SHAP value of 0.455. Higher values of velo_high_15 (indicated by purple) on the left side of the SHAP plot show that high-speed movements reduce the likelihood of injury, while lower values (yellow) increase injury risk. This nuanced understanding highlights the protective role of certain movement patterns, emphasizing how the expanded dataset allowed us to capture these critical relationships. The findings from variables like this provide actionable insights for injury prevention and performance optimization strategies.
       </p>
       <Image
-      src="https://github.com/user-attachments/assets/b337c29c-61dd-40cf-af7f-22273a92cda6"
+      src="/images/updated_impplot.png"
       alt="SHAP Summary Plot - Expanded Dataset"
       width={800}
       height={400}
       className="rounded shadow-md mb-6"
       />
       <Image
-      src="https://github.com/user-attachments/assets/2ac982e3-77c5-4745-bd9d-ea98737fd37a"
+      src="/images/updated_shap.png"
       alt="SHAP Feature Importance Bar Chart - Expanded Dataset"
       width={800}
       height={400}
