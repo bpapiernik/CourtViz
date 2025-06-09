@@ -39,13 +39,13 @@ export default function PatrickWilliamsBlog() {
       className="my-6 rounded shadow"
       />
       <p className="mb-4">
-        The modern NBA is about creating advantages in the half court - 2-on1s in pick-and-rolls, 3-on-2s on the weak side, and rotating defenses with ball movement. Williams has lacked the ability to create these offensive advantages whether on or off the ball. In the 2024-25 season, Patrick Williams ranks in the 2nd percentile in Isolation PPP (0.35) and 18th percentile as a Pick-and-Roll Ball Hander (0.73 PPP). He doesn’t shift defenses, collapse help, or force rotations. 
+        The modern NBA is about creating advantages in the half court - 2-on1s in pick-and-rolls, 3-on-2s on the weak side, and rotating defenses with ball movement. Williams has lacked the ability to create these offensive advantages whether on or off the ball. In the 2024-25 season, Patrick Williams ranks in the 2nd percentile in Isolation PPP (0.35) and 18th percentile as a Pick-and-Roll Ball Hander (0.73 PPP). He doesn&apos;t shift defenses, collapse help, or force rotations. 
       </p>
       <p className="mb-4">
-        Williams isn’t much better moving off the ball. His cutting efficiency (0.74 PPP, 18th percentile in 2024-25) shows that he’s not consistently creating easy looks through timely cuts or off-ball screens when the defenders collapse on a ball-handler. Without this shot creation and movement, his defender can often sag off him to clog the lane or help with the pick-and-roll as the 3rd defender.
+        Williams isn&apos;t much better moving off the ball. His cutting efficiency (0.74 PPP, 18th percentile in 2024-25) shows that hes not consistently creating easy looks through timely cuts or off-ball screens when the defenders collapse on a ball-handler. Without this shot creation and movement, his defender can often sag off him to clog the lane or help with the pick-and-roll as the 3rd defender.
       </p>
       <p className="mb-4">
-        This has resulted in Williams remaining a stationary spot-up shooter, which he performs above average (66th percentile, 1.06 PPP in 2024-25). This isn’t dangerous enough to cause Williams’ defender to remain tied to Willaims. Defenders can cheat off him in help coverage because Williams doesn’t remain an option to punish the defense with quick decisions. 
+        This has resulted in Williams remaining a stationary spot-up shooter, which he performs above average (66th percentile, 1.06 PPP in 2024-25). This isn&apos;t dangerous enough to cause Williams&apos; defender to remain tied to Willaims. Defenders can cheat off him in help coverage because Williams doesn&apos;t remain an option to punish the defense with quick decisions. 
       </p>
       <h3 className="text-xl font-semibold mt-4 mb-1">
         Year 3 Was the Peak — Then Injuries Struck
@@ -73,7 +73,7 @@ export default function PatrickWilliamsBlog() {
         Move Without the Ball
       </h3>
       <p className="mb-4">
-        If Williams isn’t going to break defenders off the dribble, he needs to become more active and impactable as a mover. Off-ball activity - cuts, slip screens, or relocating after the pass - is essential to keeping the defenders engaged and creating space. Right now, he is too stationary, which makes the defender’s job easier with help defense. 
+        If Williams isn&apos;t going to break defenders off the dribble, he needs to become more active and impactable as a mover. Off-ball activity - cuts, slip screens, or relocating after the pass - is essential to keeping the defenders engaged and creating space. Right now, he is too stationary, which makes the defender&apos;s job easier with help defense. 
       </p>
       <h3 className="text-xl font-semibold mt-4 mb-1">
         Reclaim the Paint
@@ -92,14 +92,14 @@ export default function PatrickWilliamsBlog() {
         Crash the Glass
       </h3>
       <p className="mb-4">
-        Rebounding is one of the simplest ways to impact the game with William’s size and length. Unfortunately, he isn’t doing enough crashing the glass with his OREB % ranking 37th percentile and his OREB Chance % ranking 37th percentile. Defensively, Williams has been better but underwhelming - 39th percentile in DREB Chance % and 65th percentile in DREB %. Given his athleticism and size, there is no reason he shouldn’t be more disruptive on the boards and create extra possessions. 
+        Rebounding is one of the simplest ways to impact the game with William&apos;s size and length. Unfortunately, he isn&apos;t doing enough crashing the glass with his OREB % ranking 37th percentile and his OREB Chance % ranking 37th percentile. Defensively, Williams has been better but underwhelming - 39th percentile in DREB Chance % and 65th percentile in DREB %. Given his athleticism and size, there is no reason he shouldn&apos;t be more disruptive on the boards and create extra possessions. 
       </p>
       <h2 className="text-2xl font-semibold mt-6 mb-2">Is There Still Hope?</h2>
       <p className="mb-4">
         Yes, but the ceiling might be lower than expected. 
       </p>
       <p className="mb-4">
-        Patrick Williams’ pre-injury 2022-23 season showed promise - not as an All-Star, but as a modern role player with defensive upside and opportunistic scoring. The injuries and absence of on-ball growth have set him back. There is still a path forward if he commits to off-ball impact and leans on his defense. In the moden NBA, non-creators can thrive if they move, space, and defend. Williams can be that guy. 
+        Patrick Williams&apos; pre-injury 2022-23 season showed promise - not as an All-Star, but as a modern role player with defensive upside and opportunistic scoring. The injuries and absence of on-ball growth have set him back. There is still a path forward if he commits to off-ball impact and leans on his defense. In the moden NBA, non-creators can thrive if they move, space, and defend. Williams can be that guy. 
       </p>
     </div>
   );
