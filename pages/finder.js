@@ -111,43 +111,33 @@ const statNameMap = {
   "PAINT_TOUCH_TOV_PCT_PaintTouch_pct": "Turnover %"
 };
 
-const synergyPlayTypeLabelMap = {
-  Cut: 'Cut',
-  Handoff: 'Handoff',
-  Isolation: 'Isolation',
-  Misc: 'Misc',
-  PRBallHandler: 'Pick-and-Roll Ball Handler',
-  Spotup: 'Spot-Up',
-  Postup: 'Post-Up',
-  Transition: 'Transition',
-  OffScreen: 'Off Screen',
-  OffRebound: 'Offensive Rebound',
-  PRRollman: 'Pick-and-Roll Roll Man'
-};
-
-const availableStats = [
-  // Regular playtype stats
-  ...Object.entries(statNameMap).map(([key, label]) => ({
-    key,
-    label,
-    source: 'playtype'
-  })),
-  
-  // Synergy offensive and defensive stats
-  ...Object.keys(synergyPlayTypeLabelMap).flatMap(playType => ([
-    {
-      key: `synergy:offensive:${playType}`,
-      label: `Synergy (Offensive) – ${synergyPlayTypeLabelMap[playType]}`,
-      source: 'synergy'
-    },
-    {
-      key: `synergy:defensive:${playType}`,
-      label: `Synergy (Defensive) – ${synergyPlayTypeLabelMap[playType]}`,
-      source: 'synergy'
-    }
-  ]))
+const synergyStatMap = [
+  'Cut',
+  'Handoff',
+  'Isolation',
+  'Misc',
+  'PRBallHandler',
+  'Spotup',
+  'Postup',
+  'Transition',
+  'OffScreen',
+  'OffRebound',
+  'PRRollman'
 ];
 
+const availableStats = [
+  ...Object.entries(statNameMap).map(([key, label]) => ({ key, label, source: 'playtype' })),
+  ...synergyStatMap.map(playType => ({
+    key: `synergy:offensive:${playType}`,
+    label: `Synergy (Offensive) – ${playType}`,
+    source: 'synergy'
+  })),
+  ...synergyStatMap.map(playType => ({
+    key: `synergy:defensive:${playType}`,
+    label: `Synergy (Defensive) – ${playType}`,
+    source: 'synergy'
+  }))
+];
 
 export default function Finder() {
   const [ageMin, setAgeMin] = useState(18);
