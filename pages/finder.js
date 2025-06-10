@@ -111,7 +111,7 @@ const statNameMap = {
   "PAINT_TOUCH_TOV_PCT_PaintTouch_pct": "Turnover %"
 };
 
-const synergyStatMap = [
+const synergyOffensiveMap = [
   'Cut',
   'Handoff',
   'Isolation',
@@ -125,14 +125,25 @@ const synergyStatMap = [
   'PRRollman'
 ];
 
+const synergyDefensiveMap = [
+  'Postup',
+  'Isolation',
+  'PRRollman',
+  'Handoff',
+  'PRBallHandler',
+  'OffScreen',
+  'Spotup'
+];
+
+
 const availableStats = [
   ...Object.entries(statNameMap).map(([key, label]) => ({ key, label, source: 'playtype' })),
-  ...synergyStatMap.map(playType => ({
+  ...synergyOffensiveMap.map(playType => ({
     key: `synergy:offensive:${playType}`,
     label: `Synergy (Offensive) – ${playType}`,
     source: 'synergy'
   })),
-  ...synergyStatMap.map(playType => ({
+  ...synergyDefensiveMap.map(playType => ({
     key: `synergy:defensive:${playType}`,
     label: `Synergy (Defensive) – ${playType}`,
     source: 'synergy'
