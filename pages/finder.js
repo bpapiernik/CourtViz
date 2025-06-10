@@ -190,16 +190,32 @@ export default function Finder() {
       AGE: ageMap.get(player.PLAYER_ID) || null
     }));
 
-    const { data: synergyData, error: synergyError } = await supabase
+    const { data: synergyOff, error: synergyOffError } = await supabase
       .from('synergy')
       .select('PLAYER_ID, PLAY_TYPE, TYPE_GROUPING, PPP, SEASON')
-      .eq('SEASON', season);
+      .eq('SEASON', season)
+      .eq('TYPE_GROUPING', 'offensive');
+
+    const { data: synergyDef, error: synergyDefError } = await supabase
+      .from('synergy')
+      .select('PLAYER_ID, PLAY_TYPE, TYPE_GROUPING, PPP, SEASON')
+      .eq('SEASON', season)
+      .eq('TYPE_GROUPING', 'defensive');
+
+    if (synergyOffError || synergyDefError) {
+      console.error("Synergy errors:", synergyOffError, synergyDefError);
+      setLoading(false);
+      return;
+    }
+
 
     const synergyMap = new Map();
-    for (const row of synergyData || []) {
+
+    [...(synergyOff || []), ...(synergyDef || [])].forEach(row => {
       if (!synergyMap.has(row.PLAYER_ID)) synergyMap.set(row.PLAYER_ID, []);
       synergyMap.get(row.PLAYER_ID).push(row);
-    }
+    });
+
 
     const filtered = merged.filter(player => {
       const synergyRows = synergyMap.get(player.PLAYER_ID) || [];
