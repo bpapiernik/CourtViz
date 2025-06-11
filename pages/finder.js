@@ -178,7 +178,8 @@ export default function Finder() {
     // Step 2: Fetch age data and filter to selected season
     const { data: ageData, error: ageError } = await supabase
       .from('playtype_percentiles_age')
-      .select('PLAYER_ID, season, age');
+      .select('PLAYER_ID, season, age')
+      .eq('season', season);
 
     if (ageError) {
       console.error("Age data error:", ageError);
@@ -186,14 +187,10 @@ export default function Finder() {
       return;
     }
 
-    // Step 3: Build a PLAYER_ID → age map (only for selected season)
     const seasonAgeMap = new Map(
-      (ageData || [])
-        .filter(p => p.season === season)
-        .map(p => [p.PLAYER_ID, p.age])
+      (ageData || []).map(p => [p.PLAYER_ID, p.age])
     );
 
-    // Step 4: Merge AGE onto baseData using PLAYER_ID
     const merged = (baseData || []).map(player => ({
       ...player,
       AGE: seasonAgeMap.get(player.PLAYER_ID) ?? null
