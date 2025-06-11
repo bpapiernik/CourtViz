@@ -353,8 +353,9 @@ export default function Finder() {
                   {statFilters.map((filter, idx) => {
                     if (filter.stat.startsWith('synergy:')) {
                       const [_prefix, typeGroup, playType] = filter.stat.split(':');
-                      const matching = (player.synergy || []).find(s => s.TYPE_GROUPING === typeGroup && s.PLAY_TYPE === playType);
-                      return <td key={idx} className="border px-2 py-1">{matching?.PPP?.toFixed(2) || '—'}</td>;
+                      const key = `${String(player.PLAYER_ID)}-${typeGroup}-${playType}`;
+                      const ppp = player.synergy?.get(key); 
+                      return <td key={idx} className="border px-2 py-1">{ppp !== undefined ? ppp.toFixed(2) : '—'}</td>;
                     }
                     return <td key={idx} className="border px-2 py-1">{Math.round((player[filter.stat] || 0) * 100)}%</td>;
                   })}
