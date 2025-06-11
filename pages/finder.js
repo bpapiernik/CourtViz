@@ -197,54 +197,53 @@ export default function Finder() {
     }));
 
     const { data: synergyOff, error: synergyOffError } = await supabase
-    .from('synergy')
-    .select('PLAYER_ID, PLAY_TYPE, TYPE_GROUPING, PPP, SEASON')
-    .eq('SEASON', season)
-    .eq('TYPE_GROUPING', 'offensive');
+      .from('synergy')
+      .select('PLAYER_ID, PLAY_TYPE, TYPE_GROUPING, PPP, SEASON')
+      .eq('SEASON', season)
+      .eq('TYPE_GROUPING', 'offensive');
 
-  const { data: synergyDef, error: synergyDefError } = await supabase
-    .from('synergy')
-    .select('PLAYER_ID, PLAY_TYPE, TYPE_GROUPING, PPP, SEASON')
-    .eq('SEASON', season)
-    .eq('TYPE_GROUPING', 'defensive');
+    const { data: synergyDef, error: synergyDefError } = await supabase
+      .from('synergy')
+      .select('PLAYER_ID, PLAY_TYPE, TYPE_GROUPING, PPP, SEASON')
+      .eq('SEASON', season)
+      .eq('TYPE_GROUPING', 'defensive');
 
-  if (synergyOffError || synergyDefError) {
-    console.error("Synergy errors:", synergyOffError, synergyDefError);
-    setLoading(false);
-    return;
-  }
+    if (synergyOffError || synergyDefError) {
+      console.error("Synergy errors:", synergyOffError, synergyDefError);
+      setLoading(false);
+      return;
+    }
 
-  // Build a composite synergy map with keys like "201942-defensive-Spotup"
-  const synergyMap = new Map();
-  [...(synergyOff || []), ...(synergyDef || [])].forEach(row => {
-    const key = `${String(row.PLAYER_ID)}-${row.TYPE_GROUPING}-${row.PLAY_TYPE}`;
-    synergyMap.set(key, row.PPP);
-  });
 
-  // Filter players
-  const filtered = merged.filter(player => {
-    if (!player.AGE || player.AGE > ageMax || player.AGE < ageMin) return false;
+    const synergyMap = new Map();
 
-    return statFilters.every(filter => {
-      if (filter.stat.startsWith('synergy:')) {
-        const [_prefix, typeGroup, playType] = filter.stat.split(':');
-        const key = `${String(player.PLAYER_ID)}-${typeGroup}-${playType}`;
-        const ppp = synergyMap.get(key) || 0;
-        return ppp >= filter.min / 100;
-      } else {
-        return (player[filter.stat] || 0) >= (filter.min / 100);
-      }
+    [...(synergyOff || []), ...(synergyDef || [])].forEach(row => {
+      if (!synergyMap.has(row.PLAYER_ID)) synergyMap.set(row.PLAYER_ID, []);
+      synergyMap.get(row.PLAYER_ID).push(row);
     });
-  });
 
-  // Enrich with synergy entries (optional)
-  const enriched = filtered.map(player => ({
-    ...player,
-    synergy: synergyMap  // Optional, not used directly anymore
-  }));
 
-  setResults(enriched);
-  setLoading(false);
+    const filtered = merged.filter(player => {
+      const synergyRows = synergyMap.get(player.PLAYER_ID) || [];
+      if (!player.AGE || player.AGE > ageMax || player.AGE < ageMin) return false;
+      return statFilters.every(filter => {
+        if (filter.stat.startsWith('synergy:')) {
+          const [_prefix, typeGroup, playType] = filter.stat.split(':');
+          const matching = synergyRows.find(s => s.TYPE_GROUPING === typeGroup && s.PLAY_TYPE === playType);
+          return (matching?.PPP || 0) >= filter.min / 100;
+        } else {
+          return (player[filter.stat] || 0) >= (filter.min / 100);
+        }
+      });
+    });
+
+    const enriched = filtered.map(player => ({
+      ...player,
+      synergy: synergyMap.get(player.PLAYER_ID) || []
+    }));
+
+    setResults(enriched);
+    setLoading(false);
   };
 
   return (
