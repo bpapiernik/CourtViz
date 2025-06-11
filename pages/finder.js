@@ -338,6 +338,7 @@ export default function Finder() {
                   </th>
                 ))}
               </tr>
+              <th className="border px-2 py-1">Age</th>
             </thead>
             <tbody>
               {results.map(player => (
@@ -345,7 +346,7 @@ export default function Finder() {
                   <td className="border px-2 py-1 text-blue-700 underline">
                     <Link href={`/player/${player.PLAYER_ID}`}>{player.PLAYER_NAME}</Link>
                   </td>
-                  
+                  <td className="border px-2 py-1">{player.AGE ?? '—'}</td>
                   {statFilters.map((filter, idx) => {
                     if (filter.stat.startsWith('synergy:')) {
                       const [_prefix, typeGroup, playType] = filter.stat.split(':');
