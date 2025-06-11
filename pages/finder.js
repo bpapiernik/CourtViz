@@ -214,22 +214,39 @@ export default function Finder() {
       return;
     }
 
+    // Build PLAYER_ID → AGE map from merged (which already contains age)
+    const ageLookup = new Map();
+    merged.forEach(player => {
+      ageLookup.set(player.PLAYER_ID, player.AGE);
+    });
 
+    // Combine synergy rows and inject AGE from ageLookup
+    const allSynergyRows = [...(synergyOff || []), ...(synergyDef || [])].map(row => ({
+      ...row,
+      AGE: ageLookup.get(row.PLAYER_ID) ?? null
+    }));
+
+    // Group synergy rows by PLAYER_ID
     const synergyMap = new Map();
-
-    [...(synergyOff || []), ...(synergyDef || [])].forEach(row => {
+    allSynergyRows.forEach(row => {
       if (!synergyMap.has(row.PLAYER_ID)) synergyMap.set(row.PLAYER_ID, []);
       synergyMap.get(row.PLAYER_ID).push(row);
     });
 
-
+    // Filter merged based on AGE and synergy stats
     const filtered = merged.filter(player => {
       const synergyRows = synergyMap.get(player.PLAYER_ID) || [];
-      if (!player.AGE || player.AGE > ageMax || player.AGE < ageMin) return false;
+
+      // Use player.AGE from merged or fallback to AGE in synergyRows
+      const age = player.AGE ?? (synergyRows[0]?.AGE ?? null);
+      if (!age || age > ageMax || age < ageMin) return false;
+
       return statFilters.every(filter => {
         if (filter.stat.startsWith('synergy:')) {
           const [_prefix, typeGroup, playType] = filter.stat.split(':');
-          const matching = synergyRows.find(s => s.TYPE_GROUPING === typeGroup && s.PLAY_TYPE === playType);
+          const matching = synergyRows.find(
+            s => s.TYPE_GROUPING === typeGroup && s.PLAY_TYPE === playType
+          );
           return (matching?.PPP || 0) >= filter.min / 100;
         } else {
           return (player[filter.stat] || 0) >= (filter.min / 100);
@@ -237,6 +254,7 @@ export default function Finder() {
       });
     });
 
+    // Attach synergy rows to each player
     const enriched = filtered.map(player => ({
       ...player,
       synergy: synergyMap.get(player.PLAYER_ID) || []
