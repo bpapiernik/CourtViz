@@ -214,32 +214,33 @@ export default function Finder() {
       return;
     }
 
-
+    // Build a composite synergy map with keys like "201942-defensive-Spotup"
     const synergyMap = new Map();
-
     [...(synergyOff || []), ...(synergyDef || [])].forEach(row => {
-      if (!synergyMap.has(row.PLAYER_ID)) synergyMap.set(row.PLAYER_ID, []);
-      synergyMap.get(row.PLAYER_ID).push(row);
+      const key = `${String(row.PLAYER_ID)}-${row.TYPE_GROUPING}-${row.PLAY_TYPE}`;
+      synergyMap.set(key, row.PPP);
     });
 
-
+    // Filter players
     const filtered = merged.filter(player => {
-      const synergyRows = synergyMap.get(player.PLAYER_ID) || [];
       if (!player.AGE || player.AGE > ageMax || player.AGE < ageMin) return false;
+
       return statFilters.every(filter => {
         if (filter.stat.startsWith('synergy:')) {
           const [_prefix, typeGroup, playType] = filter.stat.split(':');
-          const matching = synergyRows.find(s => s.TYPE_GROUPING === typeGroup && s.PLAY_TYPE === playType);
-          return (matching?.PPP || 0) >= filter.min / 100;
+          const key = `${String(player.PLAYER_ID)}-${typeGroup}-${playType}`;
+          const ppp = synergyMap.get(key) || 0;
+          return ppp >= filter.min / 100;
         } else {
           return (player[filter.stat] || 0) >= (filter.min / 100);
         }
       });
     });
 
+    // Enrich with synergy entries (optional)
     const enriched = filtered.map(player => ({
       ...player,
-      synergy: synergyMap.get(player.PLAYER_ID) || []
+      synergy: synergyMap  // Optional, not used directly anymore
     }));
 
     setResults(enriched);
