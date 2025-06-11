@@ -161,102 +161,93 @@ export default function Finder() {
   const [loading, setLoading] = useState(false);
 
   const handleSearch = async () => {
-  setLoading(true);
+    setLoading(true);
 
-  // Step 1: Fetch base playtype percentiles data for the selected season
-  const { data: baseData, error: baseError } = await supabase
-    .from('playtype_percentiles')
-    .select('*')
-    .eq('season', season);
+    // Step 1: Fetch playtype data for the selected season
+    const { data: baseData, error: baseError } = await supabase
+      .from('playtype_percentiles')
+      .select('*')
+      .eq('season', season);
 
-  if (baseError) {
-    console.error("Base data error:", baseError);
-    setLoading(false);
-    return;
-  }
-
-  // Step 2: Filter base data to the selected season only (defensive safeguard)
-  const seasonBaseData = (baseData || []).filter(p => p.season === season);
-
-  // Step 3: Fetch player ages for all seasons
-  const { data: ageData, error: ageError } = await supabase
-    .from('playtype_percentiles_age')
-    .select('PLAYER_ID, season, age');
-
-  if (ageError) {
-    console.error("Age data error:", ageError);
-    setLoading(false);
-    return;
-  }
-
-  // Step 4: Filter age data to current season and create a PLAYER_ID → age map
-  const seasonAgeData = (ageData || []).filter(p => p.season === season);
-  const ageMap = new Map(seasonAgeData.map(p => [p.PLAYER_ID, p.age]));
-
-  // Step 5: Merge AGE into the base data using PLAYER_ID as key
-  const merged = seasonBaseData.map(player => ({
-    ...player,
-    AGE: ageMap.get(player.PLAYER_ID) ?? null
-  }));
-
-  // Step 6: Fetch synergy data for the selected season, split by type
-  const { data: synergyOff, error: synergyOffError } = await supabase
-    .from('synergy')
-    .select('PLAYER_ID, PLAY_TYPE, TYPE_GROUPING, PPP, SEASON')
-    .eq('SEASON', season)
-    .eq('TYPE_GROUPING', 'offensive');
-
-  const { data: synergyDef, error: synergyDefError } = await supabase
-    .from('synergy')
-    .select('PLAYER_ID, PLAY_TYPE, TYPE_GROUPING, PPP, SEASON')
-    .eq('SEASON', season)
-    .eq('TYPE_GROUPING', 'defensive');
-
-  if (synergyOffError || synergyDefError) {
-    console.error("Synergy errors:", synergyOffError, synergyDefError);
-    setLoading(false);
-    return;
-  }
-
-  // Step 7: Combine synergy offensive/defensive rows into a single map by PLAYER_ID
-  const synergyMap = new Map();
-  [...(synergyOff || []), ...(synergyDef || [])].forEach(row => {
-    if (!synergyMap.has(row.PLAYER_ID)) synergyMap.set(row.PLAYER_ID, []);
-    synergyMap.get(row.PLAYER_ID).push(row);
-  });
-
-  // Step 8: Filter merged player data based on age + stat filters (playtype & synergy)
-  const filtered = merged.filter(player => {
-    const synergyRows = synergyMap.get(player.PLAYER_ID) || [];
-
-    // Filter by age bounds only if age exists
-    if (player.AGE !== null && player.AGE !== undefined) {
-      if (player.AGE < ageMin || player.AGE > ageMax) return false;
+    if (baseError) {
+      console.error("Base data error:", baseError);
+      setLoading(false);
+      return;
     }
 
-    // Filter by all selected stat thresholds
-    return statFilters.every(filter => {
-      if (filter.stat.startsWith('synergy:')) {
-        const [_prefix, typeGroup, playType] = filter.stat.split(':');
-        const matching = synergyRows.find(s =>
-          s.TYPE_GROUPING === typeGroup && s.PLAY_TYPE === playType
-        );
-        return (matching?.PPP || 0) >= filter.min / 100;
-      } else {
-        return (player[filter.stat] || 0) >= (filter.min / 100);
-      }
+    // Step 2: Fetch age data and filter to selected season
+    const { data: ageData, error: ageError } = await supabase
+      .from('playtype_percentiles_age')
+      .select('PLAYER_ID, season, age');
+
+    if (ageError) {
+      console.error("Age data error:", ageError);
+      setLoading(false);
+      return;
+    }
+
+    // Step 3: Build a PLAYER_ID → age map (only for selected season)
+    const seasonAgeMap = new Map(
+      (ageData || [])
+        .filter(p => p.season === season)
+        .map(p => [p.PLAYER_ID, p.age])
+    );
+
+    // Step 4: Merge AGE onto baseData using PLAYER_ID
+    const merged = (baseData || []).map(player => ({
+      ...player,
+      AGE: seasonAgeMap.get(player.PLAYER_ID) ?? null
+    }));
+
+    const { data: synergyOff, error: synergyOffError } = await supabase
+      .from('synergy')
+      .select('PLAYER_ID, PLAY_TYPE, TYPE_GROUPING, PPP, SEASON')
+      .eq('SEASON', season)
+      .eq('TYPE_GROUPING', 'offensive');
+
+    const { data: synergyDef, error: synergyDefError } = await supabase
+      .from('synergy')
+      .select('PLAYER_ID, PLAY_TYPE, TYPE_GROUPING, PPP, SEASON')
+      .eq('SEASON', season)
+      .eq('TYPE_GROUPING', 'defensive');
+
+    if (synergyOffError || synergyDefError) {
+      console.error("Synergy errors:", synergyOffError, synergyDefError);
+      setLoading(false);
+      return;
+    }
+
+
+    const synergyMap = new Map();
+
+    [...(synergyOff || []), ...(synergyDef || [])].forEach(row => {
+      if (!synergyMap.has(row.PLAYER_ID)) synergyMap.set(row.PLAYER_ID, []);
+      synergyMap.get(row.PLAYER_ID).push(row);
     });
-  });
 
-  // Step 9: Add synergy array to each player row and finalize results
-  const enriched = filtered.map(player => ({
-    ...player,
-    synergy: synergyMap.get(player.PLAYER_ID) || []
-  }));
 
-  setResults(enriched);
-  setLoading(false);
-};
+    const filtered = merged.filter(player => {
+      const synergyRows = synergyMap.get(player.PLAYER_ID) || [];
+      if (!player.AGE || player.AGE > ageMax || player.AGE < ageMin) return false;
+      return statFilters.every(filter => {
+        if (filter.stat.startsWith('synergy:')) {
+          const [_prefix, typeGroup, playType] = filter.stat.split(':');
+          const matching = synergyRows.find(s => s.TYPE_GROUPING === typeGroup && s.PLAY_TYPE === playType);
+          return (matching?.PPP || 0) >= filter.min / 100;
+        } else {
+          return (player[filter.stat] || 0) >= (filter.min / 100);
+        }
+      });
+    });
+
+    const enriched = filtered.map(player => ({
+      ...player,
+      synergy: synergyMap.get(player.PLAYER_ID) || []
+    }));
+
+    setResults(enriched);
+    setLoading(false);
+  };
 
   return (
     <div className="p-6">
