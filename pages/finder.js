@@ -186,12 +186,12 @@ export default function Finder() {
 
     const seasonAgeData = (ageData || []).filter(p => p.season === season);
     const ageMap = new Map(
-      seasonAgeData.map(p => [String(p.PLAYER_ID), p.age])
+      seasonAgeData.map(p => [p.PLAYER_ID, p.age])
     );
 
     const merged = (baseData || []).map(player => ({
       ...player,
-      AGE: ageMap.get(String(player.PLAYER_ID)) ?? null
+      AGE: ageMap.get(player.PLAYER_ID) ?? null
     }));
 
     const { data: synergyOff, error: synergyOffError } = await supabase
