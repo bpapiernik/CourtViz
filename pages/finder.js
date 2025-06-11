@@ -185,11 +185,12 @@ export default function Finder() {
     }
 
     const ageMap = new Map(
-      (ageData || []).map(p => [`${p.PLAYER_ID}-${p.season}`, p.age])
+      (ageData || []).map(p => [`${String(p.PLAYER_ID)}-${p.season}`, p.age])
     );
+
     const merged = (baseData || []).map(player => ({
       ...player,
-      AGE: ageMap.get(`${player.PLAYER_ID}-${season}`) ?? null
+      AGE: ageMap.get(`${String(player.PLAYER_ID)}-${season}`) ?? null
     }));
 
     const { data: synergyOff, error: synergyOffError } = await supabase
@@ -221,7 +222,7 @@ export default function Finder() {
 
     const filtered = merged.filter(player => {
       const synergyRows = synergyMap.get(player.PLAYER_ID) || [];
-      // if (!player.AGE || player.AGE > ageMax || player.AGE < ageMin) return false;
+      if (!player.AGE || player.AGE > ageMax || player.AGE < ageMin) return false;
       return statFilters.every(filter => {
         if (filter.stat.startsWith('synergy:')) {
           const [_prefix, typeGroup, playType] = filter.stat.split(':');
