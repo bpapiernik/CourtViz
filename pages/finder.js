@@ -184,14 +184,14 @@ export default function Finder() {
       return;
     }
 
-    const seasonAgeData = (ageData || []).filter(p => p.season === season);
-    const ageMap = new Map(
-      seasonAgeData.map(p => [p.PLAYER_ID, p.age])
-    );
+    const ageLookup = {};
+    (ageData || []).forEach(p => {
+      ageLookup[`${p.PLAYER_ID}-${p.season}`] = p.age;
+    });
 
     const merged = (baseData || []).map(player => ({
       ...player,
-      AGE: ageMap.get(player.PLAYER_ID) ?? null
+      AGE: ageLookup[`${player.PLAYER_ID}-${season}`] ?? null
     }));
 
     const { data: synergyOff, error: synergyOffError } = await supabase
