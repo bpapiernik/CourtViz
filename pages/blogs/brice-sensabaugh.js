@@ -28,9 +28,10 @@ export default function BriceSensabaughBlog() {
           <div
             className="mt-4 mb-4"
             dangerouslySetInnerHTML={{
-              __html: `<blockquote class="twitter-tweet"><p lang="en" dir="ltr">Brice Sensabaugh floater appreciation post <a href="https://t.co/iNH1PRGHOR">pic.twitter.com/iNH1PRGHOR</a></p>&mdash; Jazz Lead (@JazzLead) <a href="https://x.com/JazzLead/status/1931425931408904268">May 12, 2025</a></blockquote>`,
+                __html: `<blockquote class="twitter-tweet"><p lang="en" dir="ltr">Brice Sensabaugh floater appreciation post <a href="https://t.co/iNH1PRGHOR">pic.twitter.com/iNH1PRGHOR</a></p>&mdash; Jazz Lead (@JazzLead) <a href="https://twitter.com/JazzLead/status/1931425931408904268">May 12, 2025</a></blockquote>`,
             }}
-          />
+            />
+            <Script src="https://platform.twitter.com/widgets.js" strategy="lazyOnload" />
         </li>
          <li>
           <strong>Transition (89th percentile)</strong> and <strong>Spot-Up Shooting (67th percentile):</strong>{" "}
@@ -74,7 +75,7 @@ export default function BriceSensabaughBlog() {
       <p className="mb-6">
         He is turning over the ball a lot on drives without creating much for others either. This makes him more of a decisive scorer than a playmaker when he attacks off the dribble.
       </p>
-      <h2 className="text-2xl font-semibold mt-10 mb-4">\
+      <h2 className="text-2xl font-semibold mt-10 mb-4">
         Passing Profile: Average, Not Flashy
       </h2>
       <p className="mb-4">
