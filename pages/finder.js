@@ -221,7 +221,7 @@ export default function Finder() {
 
     const filtered = merged.filter(player => {
       const synergyRows = synergyMap.get(player.PLAYER_ID) || [];
-      if (!player.AGE || player.AGE > ageMax || player.AGE < ageMin) return false;
+      // if (!player.AGE || player.AGE > ageMax || player.AGE < ageMin) return false;
       return statFilters.every(filter => {
         if (filter.stat.startsWith('synergy:')) {
           const [_prefix, typeGroup, playType] = filter.stat.split(':');
