@@ -197,59 +197,54 @@ export default function Finder() {
     }));
 
     const { data: synergyOff, error: synergyOffError } = await supabase
-      .from('synergy')
-      .select('PLAYER_ID, PLAY_TYPE, TYPE_GROUPING, PPP, SEASON, age')
-      .eq('SEASON', season)
-      .eq('TYPE_GROUPING', 'offensive');
+    .from('synergy')
+    .select('PLAYER_ID, PLAY_TYPE, TYPE_GROUPING, PPP, SEASON')
+    .eq('SEASON', season)
+    .eq('TYPE_GROUPING', 'offensive');
 
-    const { data: synergyDef, error: synergyDefError } = await supabase
-      .from('synergy')
-      .select('PLAYER_ID, PLAY_TYPE, TYPE_GROUPING, PPP, SEASON, age')
-      .eq('SEASON', season)
-      .eq('TYPE_GROUPING', 'defensive');
+  const { data: synergyDef, error: synergyDefError } = await supabase
+    .from('synergy')
+    .select('PLAYER_ID, PLAY_TYPE, TYPE_GROUPING, PPP, SEASON')
+    .eq('SEASON', season)
+    .eq('TYPE_GROUPING', 'defensive');
 
-    if (synergyOffError || synergyDefError) {
-      console.error("Synergy errors:", synergyOffError, synergyDefError);
-      setLoading(false);
-      return;
-    }
-
-    // Filter synergy entries by age range
-    const synergyCombined = [...(synergyOff || []), ...(synergyDef || [])].filter(
-      row => row.age >= ageMin && row.age <= ageMax
-    );
-
-    // Build a composite synergy map keyed by composite stat string
-    const synergyMap = new Map();
-    synergyCombined.forEach(row => {
-      const key = `${String(row.PLAYER_ID)}-${row.TYPE_GROUPING}-${row.PLAY_TYPE}`;
-      synergyMap.set(key, row.PPP);
-    });
-
-    // Filter baseData players using synergyMap for synergy filters
-    const filtered = (baseData || []).filter(player => {
-      return statFilters.every(filter => {
-        if (filter.stat.startsWith('synergy:')) {
-          const [_prefix, typeGroup, playType] = filter.stat.split(':');
-          const key = `${String(player.PLAYER_ID)}-${typeGroup}-${playType}`;
-          const ppp = synergyMap.get(key) || 0;
-          return ppp >= filter.min / 100;
-        } else {
-          // For non-synergy filters, require age in baseData
-          if (!player.AGE || player.AGE > ageMax || player.AGE < ageMin) return false;
-          return (player[filter.stat] || 0) >= (filter.min / 100);
-        }
-      });
-    });
-
-    // Store synergyMap in each player result if needed for table display
-    const enriched = filtered.map(player => ({
-      ...player,
-      synergyMap: synergyMap  // Optional: use this to pull composite-keyed PPPs
-    }));
-
-    setResults(enriched);
+  if (synergyOffError || synergyDefError) {
+    console.error("Synergy errors:", synergyOffError, synergyDefError);
     setLoading(false);
+    return;
+  }
+
+  // Build a composite synergy map with keys like "201942-defensive-Spotup"
+  const synergyMap = new Map();
+  [...(synergyOff || []), ...(synergyDef || [])].forEach(row => {
+    const key = `${String(row.PLAYER_ID)}-${row.TYPE_GROUPING}-${row.PLAY_TYPE}`;
+    synergyMap.set(key, row.PPP);
+  });
+
+  // Filter players
+  const filtered = merged.filter(player => {
+    if (!player.AGE || player.AGE > ageMax || player.AGE < ageMin) return false;
+
+    return statFilters.every(filter => {
+      if (filter.stat.startsWith('synergy:')) {
+        const [_prefix, typeGroup, playType] = filter.stat.split(':');
+        const key = `${String(player.PLAYER_ID)}-${typeGroup}-${playType}`;
+        const ppp = synergyMap.get(key) || 0;
+        return ppp >= filter.min / 100;
+      } else {
+        return (player[filter.stat] || 0) >= (filter.min / 100);
+      }
+    });
+  });
+
+  // Enrich with synergy entries (optional)
+  const enriched = filtered.map(player => ({
+    ...player,
+    synergy: synergyMap  // Optional, not used directly anymore
+  }));
+
+  setResults(enriched);
+  setLoading(false);
   };
 
   return (
@@ -354,24 +349,14 @@ export default function Finder() {
                   <td className="border px-2 py-1 text-blue-700 underline">
                     <Link href={`/player/${player.PLAYER_ID}`}>{player.PLAYER_NAME}</Link>
                   </td>
-
+                  
                   {statFilters.map((filter, idx) => {
                     if (filter.stat.startsWith('synergy:')) {
                       const [_prefix, typeGroup, playType] = filter.stat.split(':');
-                      const key = `${String(player.PLAYER_ID)}-${typeGroup}-${playType}`;
-                      const ppp = player.synergyMap?.get(key);
-                      return (
-                        <td key={idx} className="border px-2 py-1">
-                          {ppp !== undefined ? ppp.toFixed(2) : '—'}
-                        </td>
-                      );
+                      const matching = (player.synergy || []).find(s => s.TYPE_GROUPING === typeGroup && s.PLAY_TYPE === playType);
+                      return <td key={idx} className="border px-2 py-1">{matching?.PPP?.toFixed(2) || '—'}</td>;
                     }
-
-                    return (
-                      <td key={idx} className="border px-2 py-1">
-                        {Math.round((player[filter.stat] || 0) * 100)}%
-                      </td>
-                    );
+                    return <td key={idx} className="border px-2 py-1">{Math.round((player[filter.stat] || 0) * 100)}%</td>;
                   })}
                 </tr>
               ))}
