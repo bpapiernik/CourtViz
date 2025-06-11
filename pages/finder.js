@@ -31,37 +31,37 @@ const statNameMap = {
   "AVG_DREB_DIST_Rebounding_pct": "Avg DREB Distance",
 
   // Catch and Shoot
-  "CATCH_SHOOT_PTS_CatchShoot_pct": "Points (PTS)",
-  "CATCH_SHOOT_FGM_CatchShoot_pct": "Field Goals Made (FGM)",
-  "CATCH_SHOOT_FGA_CatchShoot_pct": "Field Goals Attempts (FGA)",
-  "CATCH_SHOOT_FG_PCT_CatchShoot_pct": "Field Goal % (FG%)",
-  "CATCH_SHOOT_FG3M_CatchShoot_pct": "3 Pointer Made (3PM)",
-  "CATCH_SHOOT_FG3A_CatchShoot_pct": "3 Pointer Attempts (3PA)",
-  "CATCH_SHOOT_FG3_PCT_CatchShoot_pct": "3 Point % (3P%)",
+  "CATCH_SHOOT_PTS_CatchShoot_pct": "Catch & Shoot Points (PTS)",
+  "CATCH_SHOOT_FGM_CatchShoot_pct": "Catch & Shoot Field Goals Made (FGM)",
+  "CATCH_SHOOT_FGA_CatchShoot_pct": "Catch & Shoot Field Goals Attempts (FGA)",
+  "CATCH_SHOOT_FG_PCT_CatchShoot_pct": "Catch & Shoot Field Goal % (FG%)",
+  "CATCH_SHOOT_FG3M_CatchShoot_pct": "Catch & Shoot 3 Pointer Made (3PM)",
+  "CATCH_SHOOT_FG3A_CatchShoot_pct": "Catch & Shoot 3 Pointer Attempts (3PA)",
+  "CATCH_SHOOT_FG3_PCT_CatchShoot_pct": "Catch & Shoot 3 Point % (3P%)",
   "CATCH_SHOOT_EFG_PCT_CatchShoot_pct": "Catch & Shoot eFG%",
 
   // Pull Up Shots
-  "PULL_UP_PTS_PullUpShot_pct": "Points (PTS)",
-  "PULL_UP_FGM_PullUpShot_pct": "Field Goals Made (FGM)",
-  "PULL_UP_FGA_PullUpShot_pct": "Field Goals Attempts (FGA)",
-  "PULL_UP_FG_PCT_PullUpShot_pct": "Field Goal % (FG%)",
-  "PULL_UP_FG3M_PullUpShot_pct": "3 Pointer Made (3PM)",
-  "PULL_UP_FG3A_PullUpShot_pct": "3 Pointer Attempts (3PA)",
-  "PULL_UP_FG3_PCT_PullUpShot_pct": "3 Point % (3P%)",
+  "PULL_UP_PTS_PullUpShot_pct": "Pull Up Points (PTS)",
+  "PULL_UP_FGM_PullUpShot_pct": "Pull Up Field Goals Made (FGM)",
+  "PULL_UP_FGA_PullUpShot_pct": "Pull Up Field Goals Attempts (FGA)",
+  "PULL_UP_FG_PCT_PullUpShot_pct": "Pull Up Field Goal % (FG%)",
+  "PULL_UP_FG3M_PullUpShot_pct": "Pull Up 3 Pointer Made (3PM)",
+  "PULL_UP_FG3A_PullUpShot_pct": "Pull Up 3 Pointer Attempts (3PA)",
+  "PULL_UP_FG3_PCT_PullUpShot_pct": "Pull Up 3 Point % (3P%)",
   "PULL_UP_EFG_PCT_PullUpShot_pct": "Pull-Up eFG%",
 
   // Drives
   "DRIVES_Drives_pct": "Drives",
-  "DRIVE_PTS_Drives_pct": "Points (PTS)",
-  "DRIVE_PTS_PCT_Drives_pct": "Points % (PTS %)",
-  "DRIVE_FGM_Drives_pct": "Field Goals Made (FGM)",
-  "DRIVE_FGA_Drives_pct": "Field Goals Attempts (FGA)",
-  "DRIVE_FG_PCT_Drives_pct": "Field Goal % (FG%)",
-  "DRIVE_FTA_Drives_pct": "Free Throw Attempts (FTA)",
-  "DRIVE_PASSES_PCT_Drives_pct": "Pass %",
-  "DRIVE_AST_PCT_Drives_pct": "Assist %",
-  "DRIVE_TOV_PCT_Drives_pct": "Turnover %",
-  "DRIVE_PF_PCT_Drives_pct": "Personal Foul %",
+  "DRIVE_PTS_Drives_pct": "Drive Points (PTS)",
+  "DRIVE_PTS_PCT_Drives_pct": "Drive Points % (PTS %)",
+  "DRIVE_FGM_Drives_pct": "Drive Field Goals Made (FGM)",
+  "DRIVE_FGA_Drives_pct": "Drive Field Goals Attempts (FGA)",
+  "DRIVE_FG_PCT_Drives_pct": "Drive Field Goal % (FG%)",
+  "DRIVE_FTA_Drives_pct": "Drive Free Throw Attempts (FTA)",
+  "DRIVE_PASSES_PCT_Drives_pct": "Drive Pass %",
+  "DRIVE_AST_PCT_Drives_pct": "Drive Assist %",
+  "DRIVE_TOV_PCT_Drives_pct": "Drive Turnover %",
+  "DRIVE_PF_PCT_Drives_pct": "Drive Personal Foul %",
 
   // Passing
   "PASSES_MADE_Passing_pct": "Passes Made",
@@ -76,76 +76,68 @@ const statNameMap = {
 
   // Elbow Touches
   "ELBOW_TOUCHES_ElbowTouch_pct": "Elbow Touches",
-  "ELBOW_TOUCH_PTS_ElbowTouch_pct": "Points (PTS)",
-  "ELBOW_TOUCH_PTS_PCT_ElbowTouch_pct": "Points % (PTS %)",
-  "ELBOW_TOUCH_FGM_ElbowTouch_pct": "Field Goals Made (FGM)",
-  "ELBOW_TOUCH_FGA_ElbowTouch_pct": "Field Goals Attempts (FGA)",
-  "ELBOW_TOUCH_FG_PCT_ElbowTouch_pct": "Field Goal % (FG%)",
-  "ELBOW_TOUCH_FTA_ElbowTouch_pct": "Free Throw Attempts (FTA)",
-  "ELBOW_TOUCH_AST_PCT_ElbowTouch_pct": "Assist %",
-  "ELBOW_TOUCH_PASSES_PCT_ElbowTouch_pct": "Pass %",
-  "ELBOW_TOUCH_TOV_PCT_ElbowTouch_pct": "Turnover %",
+  "ELBOW_TOUCH_PTS_ElbowTouch_pct": "Elbow Touch Points (PTS)",
+  "ELBOW_TOUCH_PTS_PCT_ElbowTouch_pct": "Elbow Touch Points % (PTS %)",
+  "ELBOW_TOUCH_FGM_ElbowTouch_pct": "Elbow Touch Field Goals Made (FGM)",
+  "ELBOW_TOUCH_FGA_ElbowTouch_pct": "Elbow Touch Field Goals Attempts (FGA)",
+  "ELBOW_TOUCH_FG_PCT_ElbowTouch_pct": "Elbow Touch Field Goal % (FG%)",
+  "ELBOW_TOUCH_FTA_ElbowTouch_pct": "Elbow Touch Free Throw Attempts (FTA)",
+  "ELBOW_TOUCH_AST_PCT_ElbowTouch_pct": "Elbow Touch Assist %",
+  "ELBOW_TOUCH_PASSES_PCT_ElbowTouch_pct": "Elbow Touch Pass %",
+  "ELBOW_TOUCH_TOV_PCT_ElbowTouch_pct": "Elbow Touch Turnover %",
 
   // Post Touches
   "POST_TOUCHES_PostTouch_pct": "Post Touches",
-  "POST_TOUCH_PTS_PostTouch_pct": "Points (PTS)",
-  "POST_TOUCH_PTS_PCT_PostTouch_pct": "Points % (PTS %)",
-  "POST_TOUCH_FGM_PostTouch_pct": "Field Goals Made (FGM)",
-  "POST_TOUCH_FGA_PostTouch_pct": "Field Goals Attempts (FGA)",
-  "POST_TOUCH_FG_PCT_PostTouch_pct": "Field Goal % (FG%)",
-  "POST_TOUCH_FTA_PostTouch_pct": "Free Throw Attempts (FTA)",
-  "POST_TOUCH_AST_PCT_PostTouch_pct": "Assist %",
-  "POST_TOUCH_PASSES_PCT_PostTouch_pct": "Pass %",
-  "POST_TOUCH_TOV_PCT_PostTouch_pct":  "Turnover %",
+  "POST_TOUCH_PTS_PostTouch_pct": "Post Touch Points (PTS)",
+  "POST_TOUCH_PTS_PCT_PostTouch_pct": "Post Touch Points % (PTS %)",
+  "POST_TOUCH_FGM_PostTouch_pct": "Post Touch Field Goals Made (FGM)",
+  "POST_TOUCH_FGA_PostTouch_pct": "Post Touch Field Goals Attempts (FGA)",
+  "POST_TOUCH_FG_PCT_PostTouch_pct": "Post Touch Field Goal % (FG%)",
+  "POST_TOUCH_FTA_PostTouch_pct": "Post Touch Free Throw Attempts (FTA)",
+  "POST_TOUCH_AST_PCT_PostTouch_pct": "Post Touch Assist %",
+  "POST_TOUCH_PASSES_PCT_PostTouch_pct": "Post Touch Pass %",
+  "POST_TOUCH_TOV_PCT_PostTouch_pct":  "Post Touch Turnover %",
 
   // Paint Touches
   "PAINT_TOUCHES_PaintTouch_pct": "Paint Touches",
-  "PAINT_TOUCH_PTS_PaintTouch_pct": "Points (PTS)",
-  "PAINT_TOUCH_PTS_PCT_PaintTouch_pct": "Points % (PTS %)",
-  "PAINT_TOUCH_FGM_PaintTouch_pct": "Field Goals Made (FGM)",
-  "PAINT_TOUCH_FGA_PaintTouch_pct": "Field Goals Attempts (FGA)",
-  "PAINT_TOUCH_FG_PCT_PaintTouch_pct": "Field Goal % (FG%)",
-  "PAINT_TOUCH_FTA_PaintTouch_pct": "Free Throw Attempts (FTA)",
-  "PAINT_TOUCH_AST_PCT_PaintTouch_pct": "Assist %",
-  "PAINT_TOUCH_PASSES_PCT_PaintTouch_pct": "Pass %",
-  "PAINT_TOUCH_TOV_PCT_PaintTouch_pct": "Turnover %"
+  "PAINT_TOUCH_PTS_PaintTouch_pct": "Paint Touch Points (PTS)",
+  "PAINT_TOUCH_PTS_PCT_PaintTouch_pct": "Paint Touch Points % (PTS %)",
+  "PAINT_TOUCH_FGM_PaintTouch_pct": "Paint Touch Field Goals Made (FGM)",
+  "PAINT_TOUCH_FGA_PaintTouch_pct": "Paint Touch Field Goals Attempts (FGA)",
+  "PAINT_TOUCH_FG_PCT_PaintTouch_pct": "Paint Touch Field Goal % (FG%)",
+  "PAINT_TOUCH_FTA_PaintTouch_pct": "Paint Touch Free Throw Attempts (FTA)",
+  "PAINT_TOUCH_AST_PCT_PaintTouch_pct": "Paint Touch Assist %",
+  "PAINT_TOUCH_PASSES_PCT_PaintTouch_pct": "Paint Touch Pass %",
+  "PAINT_TOUCH_TOV_PCT_PaintTouch_pct": "Paint Touch Turnover %"
 };
 
-const synergyOffensiveMap = [
-  'Cut',
-  'Handoff',
-  'Isolation',
-  'Misc',
-  'PRBallHandler',
-  'Spotup',
-  'Postup',
-  'Transition',
-  'OffScreen',
-  'OffRebound',
-  'PRRollman'
-];
-
-const synergyDefensiveMap = [
-  'Postup',
-  'Isolation',
-  'PRRollman',
-  'Handoff',
-  'PRBallHandler',
-  'OffScreen',
-  'Spotup'
+const synergyPlaytypes = [
+  { type: 'offensive', playType: 'Cut' },
+  { type: 'offensive', playType: 'Handoff' },
+  { type: 'offensive', playType: 'Isolation' },
+  { type: 'offensive', playType: 'Misc' },
+  { type: 'offensive', playType: 'PRBallHandler' },
+  { type: 'offensive', playType: 'Spotup' },
+  { type: 'offensive', playType: 'Postup' },
+  { type: 'offensive', playType: 'Transition' },
+  { type: 'offensive', playType: 'OffScreen' },
+  { type: 'offensive', playType: 'OffRebound' },
+  { type: 'offensive', playType: 'PRRollman' },
+  { type: 'defensive', playType: 'Postup' },
+  { type: 'defensive', playType: 'Isolation' },
+  { type: 'defensive', playType: 'PRRollman' },
+  { type: 'defensive', playType: 'Handoff' },
+  { type: 'defensive', playType: 'PRBallHandler' },
+  { type: 'defensive', playType: 'OffScreen' },
+  { type: 'defensive', playType: 'Spotup' }
 ];
 
 
 const availableStats = [
   ...Object.entries(statNameMap).map(([key, label]) => ({ key, label, source: 'playtype' })),
-  ...synergyOffensiveMap.map(playType => ({
-    key: `synergy:offensive:${playType}`,
-    label: `Synergy (Offensive) – ${playType}`,
-    source: 'synergy'
-  })),
-  ...synergyDefensiveMap.map(playType => ({
-    key: `synergy:defensive:${playType}`,
-    label: `Synergy (Defensive) – ${playType}`,
+  ...synergyPlaytypes.map(({ type, playType }) => ({
+    key: `synergy:${type}:${playType}`,
+    label: `Synergy (${type[0].toUpperCase() + type.slice(1)}) – ${playType}`,
     source: 'synergy'
   }))
 ];
@@ -162,6 +154,7 @@ export default function Finder() {
 
   const handleSearch = async () => {
     setLoading(true);
+    
 
     // Step 1: Fetch playtype data for the selected season
     const { data: baseData, error: baseError } = await supabase
@@ -196,23 +189,44 @@ export default function Finder() {
       AGE: seasonAgeMap.get(player.PLAYER_ID) ?? null
     }));
 
-    const { data: synergyOff, error: synergyOffError } = await supabase
-      .from('synergy')
-      .select('PLAYER_ID, PLAY_TYPE, TYPE_GROUPING, PPP, SEASON')
-      .eq('SEASON', season)
-      .eq('TYPE_GROUPING', 'offensive');
+    async function fetchAllSynergyRows(season) {
+      const batchSize = 1000;
+      let start = 0;
+      let allRows = [];
+      let finished = false;
 
-    const { data: synergyDef, error: synergyDefError } = await supabase
-      .from('synergy')
-      .select('PLAYER_ID, PLAY_TYPE, TYPE_GROUPING, PPP, SEASON')
-      .eq('SEASON', season)
-      .eq('TYPE_GROUPING', 'defensive');
+      while (!finished) {
+        const { data, error } = await supabase
+          .from('synergy')
+          .select('PLAYER_ID, PLAY_TYPE, TYPE_GROUPING, PPP, SEASON, PERCENTILE')
+          .eq('SEASON', season)
+          .order('PLAYER_ID', { ascending: true })
+          .range(start, start + batchSize - 1);
 
-    if (synergyOffError || synergyDefError) {
-      console.error("Synergy errors:", synergyOffError, synergyDefError);
+        if (error) {
+          return { data: null, error }; // return early if there's an error
+        }
+
+        if (data.length > 0) {
+          allRows = allRows.concat(data);
+          start += batchSize;
+        }
+
+        if (data.length < batchSize) {
+          finished = true;
+        }
+      }
+
+      return { data: allRows, error: null };
+    }
+    const { data: synergyAll, error: synergyAllError } = await fetchAllSynergyRows(season);
+
+    if (synergyAllError) {
+      console.error("SynergyAll error:", synergyAllError);
       setLoading(false);
       return;
     }
+
 
     // Build PLAYER_ID → AGE map from merged (which already contains age)
     const ageLookup = new Map();
@@ -220,11 +234,12 @@ export default function Finder() {
       ageLookup.set(player.PLAYER_ID, player.AGE);
     });
 
-    // Combine synergy rows and inject AGE from ageLookup
-    const allSynergyRows = [...(synergyOff || []), ...(synergyDef || [])].map(row => ({
+    // Combine synergyAll rows and inject AGE from ageLookup
+    const allSynergyRows = (synergyAll || []).map(row => ({
       ...row,
       AGE: ageLookup.get(row.PLAYER_ID) ?? null
     }));
+
 
     // Group synergy rows by PLAYER_ID
     const synergyMap = new Map();
@@ -247,7 +262,7 @@ export default function Finder() {
           const matching = synergyRows.find(
             s => s.TYPE_GROUPING === typeGroup && s.PLAY_TYPE === playType
           );
-          return (matching?.PPP || 0) >= filter.min / 100;
+          return (matching?.PERCENTILE  || 0) >= filter.min / 100;
         } else {
           return (player[filter.stat] || 0) >= (filter.min / 100);
         }
