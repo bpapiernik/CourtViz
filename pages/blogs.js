@@ -8,7 +8,8 @@ export default function Blogs() {
         Stay tuned for breakdowns and insights. Here’s the latest post:
       </p>
 
-      <div className="border p-4 rounded-lg hover:shadow transition">
+      {/* Patrick Williams Blog Post */}
+      <div className="border p-4 rounded-lg hover:shadow transition mb-4">
         <Link href="/blogs/patrick-williams" passHref>
           <a className="block">
             <h2 className="text-2xl font-semibold mb-1">
@@ -24,7 +25,9 @@ export default function Blogs() {
           </a>
         </Link>
       </div>
-      <div className="border p-4 rounded-lg hover:shadow transition">
+
+      {/* Brice Sensabaugh Blog Post */}
+      <div className="border p-4 rounded-lg hover:shadow transition mb-4">
         <Link href="/blogs/brice-sensabaugh" passHref>
           <a className="block">
             <h2 className="text-2xl font-semibold mb-1">
@@ -40,6 +43,25 @@ export default function Blogs() {
           </a>
         </Link>
       </div>
+
+      {/* Xaivian Lee Blog Post */}
+      <div className="border p-4 rounded-lg hover:shadow transition">
+        <Link href="/blogs/xaivian-lee-florida" passHref>
+          <a className="block">
+            <h2 className="text-2xl font-semibold mb-1">
+              Previewing Xaivian Lee at Florida: From Ivy League to SEC Initiator
+            </h2>
+            <p className="text-sm text-gray-500 mb-2">
+              Brian Papiernik • June 2025
+            </p>
+            <p className="text-gray-700">
+              A breakdown of how Xaivian Lee’s pick-and-roll creation, rim pressure, and
+              transition play can reshape Florida’s offense after Walter Clayton’s departure.
+            </p>
+          </a>
+        </Link>
+      </div>
     </div>
   );
 }
+
