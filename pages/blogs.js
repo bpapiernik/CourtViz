@@ -45,7 +45,7 @@ export default function Blogs() {
       </div>
 
       {/* Xaivian Lee Blog Post */}
-      <div className="border p-4 rounded-lg hover:shadow transition">
+      <div className="border p-4 rounded-lg hover:shadow transition mb-4">
         <Link href="/blogs/xaivian-lee-florida" passHref>
           <a className="block">
             <h2 className="text-2xl font-semibold mb-1">
@@ -61,7 +61,24 @@ export default function Blogs() {
           </a>
         </Link>
       </div>
+
+      {/* Naithan George Blog Post */}
+      <div className="border p-4 rounded-lg hover:shadow transition">
+        <Link href="/blogs/naithan-george" passHref>
+          <a className="block">
+            <h2 className="text-2xl font-semibold mb-1">
+              The Quiet Catalyst: Naithan George’s Fit at Syracuse
+            </h2>
+            <p className="text-sm text-gray-500 mb-2">
+              Brian Papiernik • June 2025
+            </p>
+            <p className="text-gray-700">
+              How Georgia Tech transfer Naithan George can unlock Syracuse’s offense with his poise,
+              vision, and ability to organize a talented but previously disjointed roster.
+            </p>
+          </a>
+        </Link>
+      </div>
     </div>
   );
 }
-
