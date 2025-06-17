@@ -66,7 +66,13 @@ export default function Home() {
         </ul>
 
         <p className="text-sm text-gray-600 italic mt-4">
-          🔗 A full project archive and downloadable resume will be added here soon.
+          🔗 <a
+            href="/Brian G Papiernik - 2025 Sports Resume.pdf"
+            download
+            className="text-blue-600 underline"
+          >
+            Download my resume here
+          </a>
         </p>
       </section>
     </main>
