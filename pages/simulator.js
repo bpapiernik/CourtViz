@@ -15,6 +15,7 @@ export default function Simulator() {
       const { data, error } = await supabase
         .from('march_madness_sq')
         .select('TEAM')
+        .range(0, 1999)
         .order('TEAM', { ascending: true });
 
       if (error) {
