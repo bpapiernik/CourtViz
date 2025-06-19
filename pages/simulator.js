@@ -5,12 +5,11 @@ export default function Simulator() {
   const [teams, setTeams] = useState([]);
   const [team1, setTeam1] = useState('');
   const [team2, setTeam2] = useState('');
-  const [team1Year, setTeam1Year] = useState(2023);
-  const [team2Year, setTeam2Year] = useState(2024);
+  const [team1Year, setTeam1Year] = useState(2024);
+  const [team2Year, setTeam2Year] = useState(2025);
   const [result, setResult] = useState(null);
   const [loading, setLoading] = useState(false);
 
-  // 🔄 Fetch unique team names from Supabase
   useEffect(() => {
     async function fetchTeams() {
       const { data, error } = await supabase
@@ -52,43 +51,63 @@ export default function Simulator() {
     }
   };
 
-  return (
-    <div className="p-8 max-w-2xl mx-auto">
-      <h1 className="text-2xl font-bold mb-4">March Madness Matchup Simulator</h1>
+  const formatPercentage = (decimal) => `${(decimal * 100).toFixed(2)}%`;
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
+  return (
+    <div className="p-8 max-w-xl mx-auto bg-cream min-h-screen">
+      <h1 className="text-3xl font-bold mb-6 text-center text-gray-800">🏀 March Madness Matchup Simulator</h1>
+
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 mb-6">
         <div>
-          <label className="block font-medium mb-1">Team 1</label>
-          <select value={team1} onChange={(e) => setTeam1(e.target.value)} className="border px-2 py-1 w-full rounded">
+          <label className="block font-medium mb-1 text-gray-700">Team 1</label>
+          <select value={team1} onChange={(e) => setTeam1(e.target.value)} className="border px-3 py-2 w-full rounded shadow-sm">
             {teams.map(team => (
               <option key={team} value={team}>{team}</option>
             ))}
           </select>
-          <input type="number" value={team1Year} onChange={(e) => setTeam1Year(e.target.value)} className="border mt-1 px-2 py-1 w-full rounded" />
+          <input
+            type="number"
+            value={team1Year}
+            onChange={(e) => setTeam1Year(e.target.value)}
+            className="border mt-2 px-3 py-2 w-full rounded shadow-sm"
+            placeholder="Year"
+          />
         </div>
 
         <div>
-          <label className="block font-medium mb-1">Team 2</label>
-          <select value={team2} onChange={(e) => setTeam2(e.target.value)} className="border px-2 py-1 w-full rounded">
+          <label className="block font-medium mb-1 text-gray-700">Team 2</label>
+          <select value={team2} onChange={(e) => setTeam2(e.target.value)} className="border px-3 py-2 w-full rounded shadow-sm">
             {teams.map(team => (
               <option key={team} value={team}>{team}</option>
             ))}
           </select>
-          <input type="number" value={team2Year} onChange={(e) => setTeam2Year(e.target.value)} className="border mt-1 px-2 py-1 w-full rounded" />
+          <input
+            type="number"
+            value={team2Year}
+            onChange={(e) => setTeam2Year(e.target.value)}
+            className="border mt-2 px-3 py-2 w-full rounded shadow-sm"
+            placeholder="Year"
+          />
         </div>
       </div>
 
-      <button onClick={simulateMatchup} className="bg-blue-600 text-white px-4 py-2 rounded">
+      <button
+        onClick={simulateMatchup}
+        className="bg-blue-600 text-white font-semibold px-6 py-3 rounded shadow hover:bg-blue-700 transition"
+      >
         {loading ? "Simulating..." : "Simulate Matchup"}
       </button>
 
       {result && (
-        <div className="mt-6 p-4 border rounded bg-gray-100">
-          <p><strong>{result.team1}</strong> win probability: {result.team1_win_prob}</p>
-          <p><strong>{result.team2}</strong> win probability: {result.team2_win_prob}</p>
+        <div className="mt-8 p-6 border rounded-lg bg-white shadow text-center text-lg">
+          <p className="mb-2">
+            <strong>{result.team1} ({result.team1_year})</strong> win probability: <span className="text-blue-600 font-bold">{formatPercentage(result.team1_win_prob)}</span>
+          </p>
+          <p>
+            <strong>{result.team2} ({result.team2_year})</strong> win probability: <span className="text-red-600 font-bold">{formatPercentage(result.team2_win_prob)}</span>
+          </p>
         </div>
       )}
     </div>
   );
 }
-
