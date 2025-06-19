@@ -12,7 +12,7 @@ export default function NavBar() {
         <Link href="/fieldviz">FieldViz</Link>
         <Link href="/blogs">Blogs</Link>
         <Link href="/portfolio">Brian&apos;s Portfolio</Link>
-        <Link href="/simulator" className="ml-4 text-sm font-medium text-gray-600 hover:text-black"> CBB Simulator</Link>
+        <Link href="/simulator">CBB Simulator</Link>
       </div>
 
       <div className="flex items-center gap-4">
