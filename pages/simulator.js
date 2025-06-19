@@ -8,32 +8,43 @@ export default function Simulator() {
   const [result, setResult] = useState(null);
   const [loading, setLoading] = useState(false);
 
-  // Fetch unique TEAM-YEAR pairs
   useEffect(() => {
-    async function fetchTeams() {
+  async function fetchTeams() {
+    const batchSize = 1000;
+    let start = 0;
+    let allRows = [];
+    let finished = false;
+
+    while (!finished) {
       const { data, error } = await supabase
         .from('march_madness_sq')
         .select('TEAM,YEAR')
-        .range(0, 1999)
-        .order('TEAM', { ascending: true });
+        .range(start, start + batchSize - 1);
 
       if (error) {
         console.error("Error fetching team-year combos:", error);
-      } else {
-        const uniqueCombos = Array.from(new Set(data.map(d => `${d.TEAM}__${d.YEAR}`)))
-          .map(combo => {
-            const [team, year] = combo.split('__');
-            return { team, year: parseInt(year) };
-          });
-
-        setTeams(uniqueCombos);
-        setTeam1(uniqueCombos[0]);
-        setTeam2(uniqueCombos[1] || uniqueCombos[0]);
+        return;
       }
+
+      allRows = allRows.concat(data);
+      if (data.length < batchSize) finished = true;
+      start += batchSize;
     }
 
-    fetchTeams();
-  }, []);
+    // Remove duplicates like "Duke__2023"
+    const uniqueCombos = Array.from(new Set(allRows.map(d => `${d.TEAM}__${d.YEAR}`)))
+      .map(combo => {
+        const [team, year] = combo.split('__');
+        return { team, year: parseInt(year) };
+      });
+
+    setTeams(uniqueCombos);
+    setTeam1(uniqueCombos[0]);
+    setTeam2(uniqueCombos[1] || uniqueCombos[0]);
+  }
+
+  fetchTeams();
+}, []);
 
   const simulateMatchup = async () => {
     if (!team1 || !team2) return;
