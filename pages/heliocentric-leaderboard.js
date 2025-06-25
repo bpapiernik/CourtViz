@@ -147,6 +147,17 @@ export default function HeliocentricLeaderboard() {
         <br />
         <span className="italic">Note: This leaderboard only includes data from the <strong>2015-16 NBA season</strong>.</span>
       </p>
+      <Image
+        src="/images/ep_snapshot.png"
+        alt="EP Snapshot"
+        width={600}
+        height={300}
+        className="rounded shadow-md mb-6"
+      />
+
+      <p className="text-sm text-gray-700 mb-6">
+        In this EP Snapshot example, the shooter (triangle) takes a shot worth <strong>0.97 expected points (EP)</strong>, while a teammate in the left elbow had an EP of <strong>1.19</strong>. This is classified as a <strong>bad</strong> decision because a better opportunity existed. A shot is rated <strong>great</strong> if it's ≥0.1 EP better than any teammate option, <strong>good</strong> if it's within 0.1, <strong>bad</strong> if a teammate is 0.1–0.3 better, and <strong>terrible</strong> if another teammate is ≥0.3 better. The <strong>heliocentric value</strong> is the difference between the shot's EP and the best available teammate EP + buffer for risk of turnover, shot clock violation, etc.
+      </p>
 
       <h2 className="text-2xl font-bold mb-4">Heliocentric Leaderboard</h2>
 
