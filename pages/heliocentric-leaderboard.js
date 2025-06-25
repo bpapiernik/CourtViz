@@ -201,6 +201,7 @@ export default function HeliocentricLeaderboard() {
               <th className="border px-2 py-1 cursor-pointer" onClick={() => handleSort('terrible_decision_pct')}>Terrible % {sortConfig.key === 'terrible_decision_pct' ? (sortConfig.direction === 'asc' ? '↑' : '↓') : ''}</th>
               <th className="border px-2 py-1 cursor-pointer" onClick={() => handleSort('avg_heliocentric_value')}>Avg Value {sortConfig.key === 'avg_heliocentric_value' ? (sortConfig.direction === 'asc' ? '↑' : '↓') : ''}</th>
               <th className="border px-2 py-1 cursor-pointer" onClick={() => handleSort('total_better_options')}>Better Options {sortConfig.key === 'total_better_options' ? (sortConfig.direction === 'asc' ? '↑' : '↓') : ''}</th>
+              <th className="border px-2 py-1 cursor-pointer" onClick={() => handleSort('total_heliocentric_value')}>Total Value {sortConfig.key === 'total_heliocentric_value' ? (sortConfig.direction === 'asc' ? '↑' : '↓') : ''}</th>
             </tr>
           </thead>
           <tbody>
@@ -228,6 +229,7 @@ export default function HeliocentricLeaderboard() {
                 <td className="border px-2 py-1 text-center">{Math.round(row.terrible_decision_pct * 100)}%</td>
                 <td className="border px-2 py-1 text-center">{row.avg_heliocentric_value.toFixed(2)}</td>
                 <td className="border px-2 py-1 text-center">{row.total_better_options}</td>
+                <td className="border px-2 py-1 text-center">{row.total_heliocentric_value?.toFixed(2)}</td>
               </tr>
             ))}
           </tbody>
