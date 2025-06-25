@@ -14,7 +14,6 @@ export default function HeliocentricLeaderboard() {
     bad: 0,
     terrible: 0,
   });
-  const [positionFilter, setPositionFilter] = useState('All');
   const [sortConfig, setSortConfig] = useState({ key: '', direction: 'asc' });
 
   useEffect(() => {
@@ -118,18 +117,12 @@ export default function HeliocentricLeaderboard() {
     });
   };
 
-  const filteredData = leaderboardData.filter(row => {
-    const position = playerMap[row.player_id]?.position || '';
-    const passesPosition = positionFilter === 'All' || position === positionFilter;
-
-    return (
-      passesPosition &&
-      row.good_decision_pct * 100 >= filters.good &&
-      row.great_decision_pct * 100 >= filters.great &&
-      row.bad_decision_pct * 100 >= filters.bad &&
-      row.terrible_decision_pct * 100 >= filters.terrible
-    );
-  });
+  const filteredData = leaderboardData.filter(row =>
+    row.good_decision_pct * 100 >= filters.good &&
+    row.great_decision_pct * 100 >= filters.great &&
+    row.bad_decision_pct * 100 >= filters.bad &&
+    row.terrible_decision_pct * 100 >= filters.terrible
+  );
 
   const sortedData = [...filteredData].sort((a, b) => {
     const { key, direction } = sortConfig;
@@ -157,17 +150,17 @@ export default function HeliocentricLeaderboard() {
 
       <h2 className="text-2xl font-bold mb-4">Heliocentric Leaderboard</h2>
 
-      <div className="mb-4 w-full md:w-1/3">
-        <label className="block text-sm font-medium">Position:</label>
+      <div className="mb-6">
+        <label className="block font-semibold mb-1">Leaderboard Type:</label>
         <select
           className="border p-2 rounded w-full"
-          value={positionFilter}
-          onChange={(e) => setPositionFilter(e.target.value)}
+          value={leaderboardType}
+          onChange={(e) => setLeaderboardType(e.target.value)}
         >
-          <option value="All">All</option>
-          <option value="G">Guard</option>
-          <option value="F">Forward</option>
-          <option value="C">Center</option>
+          <option value="">Select Leaderboard Type</option>
+          {leaderboardTypes.map(type => (
+            <option key={type} value={type}>{type}</option>
+          ))}
         </select>
       </div>
 
@@ -200,48 +193,14 @@ export default function HeliocentricLeaderboard() {
             <tr className="bg-gray-100">
               <th className="border px-2 py-1">Headshot</th>
               <th className="border px-2 py-1">Player</th>
-              <th
-                className="border px-2 py-1 cursor-pointer"
-                onClick={() => handleSort('total_shots')}
-              >
-                Shots {sortConfig.key === 'total_shots' ? (sortConfig.direction === 'asc' ? '↑' : '↓') : ''}
-              </th>
-              <th
-                className="border px-2 py-1 cursor-pointer"
-                onClick={() => handleSort('good_decision_pct')}
-              >
-                Good % {sortConfig.key === 'good_decision_pct' ? (sortConfig.direction === 'asc' ? '↑' : '↓') : ''}
-              </th>
-              <th
-                className="border px-2 py-1 cursor-pointer"
-                onClick={() => handleSort('great_decision_pct')}
-              >
-                Great % {sortConfig.key === 'great_decision_pct' ? (sortConfig.direction === 'asc' ? '↑' : '↓') : ''}
-              </th>
-              <th
-                className="border px-2 py-1 cursor-pointer"
-                onClick={() => handleSort('bad_decision_pct')}
-              >
-                Bad % {sortConfig.key === 'bad_decision_pct' ? (sortConfig.direction === 'asc' ? '↑' : '↓') : ''}
-              </th>
-              <th
-                className="border px-2 py-1 cursor-pointer"
-                onClick={() => handleSort('terrible_decision_pct')}
-              >
-                Terrible % {sortConfig.key === 'terrible_decision_pct' ? (sortConfig.direction === 'asc' ? '↑' : '↓') : ''}
-              </th>
-              <th
-                className="border px-2 py-1 cursor-pointer"
-                onClick={() => handleSort('avg_heliocentric_value')}
-              >
-                Avg Value {sortConfig.key === 'avg_heliocentric_value' ? (sortConfig.direction === 'asc' ? '↑' : '↓') : ''}
-              </th>
-              <th
-                className="border px-2 py-1 cursor-pointer"
-                onClick={() => handleSort('total_better_options')}
-              >
-                Better Options {sortConfig.key === 'total_better_options' ? (sortConfig.direction === 'asc' ? '↑' : '↓') : ''}
-              </th>
+              <th className="border px-2 py-1">Position</th>
+              <th className="border px-2 py-1 cursor-pointer" onClick={() => handleSort('total_shots')}>Shots {sortConfig.key === 'total_shots' ? (sortConfig.direction === 'asc' ? '↑' : '↓') : ''}</th>
+              <th className="border px-2 py-1 cursor-pointer" onClick={() => handleSort('good_decision_pct')}>Good % {sortConfig.key === 'good_decision_pct' ? (sortConfig.direction === 'asc' ? '↑' : '↓') : ''}</th>
+              <th className="border px-2 py-1 cursor-pointer" onClick={() => handleSort('great_decision_pct')}>Great % {sortConfig.key === 'great_decision_pct' ? (sortConfig.direction === 'asc' ? '↑' : '↓') : ''}</th>
+              <th className="border px-2 py-1 cursor-pointer" onClick={() => handleSort('bad_decision_pct')}>Bad % {sortConfig.key === 'bad_decision_pct' ? (sortConfig.direction === 'asc' ? '↑' : '↓') : ''}</th>
+              <th className="border px-2 py-1 cursor-pointer" onClick={() => handleSort('terrible_decision_pct')}>Terrible % {sortConfig.key === 'terrible_decision_pct' ? (sortConfig.direction === 'asc' ? '↑' : '↓') : ''}</th>
+              <th className="border px-2 py-1 cursor-pointer" onClick={() => handleSort('avg_heliocentric_value')}>Avg Value {sortConfig.key === 'avg_heliocentric_value' ? (sortConfig.direction === 'asc' ? '↑' : '↓') : ''}</th>
+              <th className="border px-2 py-1 cursor-pointer" onClick={() => handleSort('total_better_options')}>Better Options {sortConfig.key === 'total_better_options' ? (sortConfig.direction === 'asc' ? '↑' : '↓') : ''}</th>
             </tr>
           </thead>
           <tbody>
@@ -258,6 +217,9 @@ export default function HeliocentricLeaderboard() {
                   <Link href={`/player/${row.player_id}`} className="text-blue-700 underline">
                     {playerMap[row.player_id]?.name || row.player_id}
                   </Link>
+                </td>
+                <td className="border px-2 py-1 text-center">
+                  {playerMap[row.player_id]?.position || '—'}
                 </td>
                 <td className="border px-2 py-1 text-center">{row.total_shots}</td>
                 <td className="border px-2 py-1 text-center">{Math.round(row.good_decision_pct * 100)}%</td>
@@ -278,4 +240,3 @@ export default function HeliocentricLeaderboard() {
     </div>
   );
 }
-
