@@ -358,6 +358,11 @@ export default function HeliocentricModel() {
         Together, these ideas unlock a much broader view of the game. You could build a full analytics suite around them — defensive dashboards, playmaker recognition tools, rotation breakdown visualizations — whatever fits your team&apos;s needs. And if you want to take it further, they can all be built into radar charts, interactive visuals, or scouting dashboards to help coaches, players, and execs make smarter decisions across the board.
       </p>
 
+      <h2 className="text-2xl font-semibold mt-6 mb-2">Updated Features: Shot Maker Difficulty Value</h2>
+      <p className="mb-4">
+        Building on the foundation of expected points modeling, we&apos;ve introduced a new feature called the <strong>Shot Maker Difficulty Value</strong>. This metric captures the added value a player provides on a shot by comparing the actual outcome to the expected points (EP) based on shot quality. Specifically, it multiplies the result of the shot (1 for make, 0 for miss) by the point value of the shot (2 or 3), then subtracts the predicted EP. The result quantifies how much a shooter added (or left on the table) relative to expectations — essentially isolating the shot-making talent above what the model predicted. A positive value means the player hit a tough shot or added value through pure skill; a negative one reflects a missed opportunity or poor execution relative to a makeable look. This feature gives us a more refined way to evaluate players&apos; finishing ability and can be a powerful lens for identifying high-level scorers, analyzing performance under pressure, or evaluating consistency across different shot types and game contexts.
+      </p>
+
 
     </div>
   );
