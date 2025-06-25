@@ -1,6 +1,5 @@
 import { useEffect, useState } from 'react';
 import { supabase } from '../lib/supabaseClient';
-import Image from 'next/image';
 import Link from 'next/link';
 
 export default function HeliocentricLeaderboard() {
@@ -15,20 +14,34 @@ export default function HeliocentricLeaderboard() {
     bad: 0,
     terrible: 0,
   });
+  const [sortConfig, setSortConfig] = useState({ key: '', direction: 'asc' });
 
   useEffect(() => {
     const fetchLeaderboardTypes = async () => {
-      const { data, error } = await supabase
-        .from('heliocentric_leaderboard')
-        .select('leaderboard_type')
-        .neq('leaderboard_type', '')
-        .then(res => ({ data: [...new Set(res.data.map(d => d.leaderboard_type))] }));
+      const batchSize = 1000;
+      let start = 0;
+      let allRows = [];
+      let finished = false;
 
-      if (error) {
-        console.error('Error fetching leaderboard types:', error);
-        return;
+      while (!finished) {
+        const { data, error } = await supabase
+          .from('heliocentric_leaderboard')
+          .select('leaderboard_type')
+          .neq('leaderboard_type', '')
+          .range(start, start + batchSize - 1);
+
+        if (error) {
+          console.error('Error fetching leaderboard types:', error);
+          return;
+        }
+
+        allRows = allRows.concat(data);
+        if (data.length < batchSize) finished = true;
+        start += batchSize;
       }
-      setLeaderboardTypes(data);
+
+      const uniqueTypes = [...new Set(allRows.map(d => d.leaderboard_type))];
+      setLeaderboardTypes(uniqueTypes);
     };
 
     fetchLeaderboardTypes();
@@ -87,9 +100,18 @@ export default function HeliocentricLeaderboard() {
       setLoading(false);
     };
 
-
     fetchData();
   }, [leaderboardType]);
+
+  const handleSort = (key) => {
+    setSortConfig(prev => {
+      if (prev.key === key) {
+        return { key, direction: prev.direction === 'asc' ? 'desc' : 'asc' };
+      } else {
+        return { key, direction: 'asc' };
+      }
+    });
+  };
 
   const filteredData = leaderboardData.filter(row =>
     row.good_decision_pct * 100 >= filters.good &&
@@ -98,13 +120,30 @@ export default function HeliocentricLeaderboard() {
     row.terrible_decision_pct * 100 >= filters.terrible
   );
 
+  const sortedData = [...filteredData].sort((a, b) => {
+    const { key, direction } = sortConfig;
+    if (!key) return 0;
+
+    const aVal = a[key];
+    const bVal = b[key];
+
+    if (typeof aVal === 'number' && typeof bVal === 'number') {
+      return direction === 'asc' ? aVal - bVal : bVal - aVal;
+    }
+
+    return direction === 'asc'
+      ? String(aVal).localeCompare(String(bVal))
+      : String(bVal).localeCompare(String(aVal));
+  });
+
   return (
     <div className="p-6">
       <p className="mb-4 text-sm text-gray-700">
-        This leaderboard highlights player decision-making based on my custom <strong>Heliocentric Shot Selection</strong> statistic — a metric that evaluates the expected value of a shot versus the best available teammate option on the floor. It measures how often players take good, great, bad, or terrible shots based on spatial tracking data. 
+        This leaderboard highlights player decision-making based on my custom <strong>Heliocentric Shot Selection</strong> statistic — a metric that evaluates the expected value of a shot versus the best available teammate option on the floor. It measures how often players take good, great, bad, or terrible shots based on spatial tracking data.
         <br />
         <span className="italic">Note: This leaderboard only includes data from the <strong>2015-16 NBA season</strong>.</span>
       </p>
+
       <h2 className="text-2xl font-bold mb-4">Heliocentric Leaderboard</h2>
 
       <div className="mb-6">
@@ -132,7 +171,7 @@ export default function HeliocentricLeaderboard() {
               className="border p-1 rounded w-full"
               value={filters[type]}
               onChange={(e) =>
-                setFilters((prev) => ({
+                setFilters(prev => ({
                   ...prev,
                   [type]: Number(e.target.value)
                 }))
@@ -144,23 +183,58 @@ export default function HeliocentricLeaderboard() {
 
       {loading && <p>Loading...</p>}
 
-      {filteredData.length > 0 && (
+      {sortedData.length > 0 && (
         <table className="w-full border text-sm">
           <thead>
             <tr className="bg-gray-100">
               <th className="border px-2 py-1">Headshot</th>
               <th className="border px-2 py-1">Player</th>
-              <th className="border px-2 py-1">Shots</th>
-              <th className="border px-2 py-1">Good %</th>
-              <th className="border px-2 py-1">Great %</th>
-              <th className="border px-2 py-1">Bad %</th>
-              <th className="border px-2 py-1">Terrible %</th>
-              <th className="border px-2 py-1">Avg Value</th>
-              <th className="border px-2 py-1">Better Options</th>
+              <th
+                className="border px-2 py-1 cursor-pointer"
+                onClick={() => handleSort('total_shots')}
+              >
+                Shots {sortConfig.key === 'total_shots' ? (sortConfig.direction === 'asc' ? '↑' : '↓') : ''}
+              </th>
+              <th
+                className="border px-2 py-1 cursor-pointer"
+                onClick={() => handleSort('good_decision_pct')}
+              >
+                Good % {sortConfig.key === 'good_decision_pct' ? (sortConfig.direction === 'asc' ? '↑' : '↓') : ''}
+              </th>
+              <th
+                className="border px-2 py-1 cursor-pointer"
+                onClick={() => handleSort('great_decision_pct')}
+              >
+                Great % {sortConfig.key === 'great_decision_pct' ? (sortConfig.direction === 'asc' ? '↑' : '↓') : ''}
+              </th>
+              <th
+                className="border px-2 py-1 cursor-pointer"
+                onClick={() => handleSort('bad_decision_pct')}
+              >
+                Bad % {sortConfig.key === 'bad_decision_pct' ? (sortConfig.direction === 'asc' ? '↑' : '↓') : ''}
+              </th>
+              <th
+                className="border px-2 py-1 cursor-pointer"
+                onClick={() => handleSort('terrible_decision_pct')}
+              >
+                Terrible % {sortConfig.key === 'terrible_decision_pct' ? (sortConfig.direction === 'asc' ? '↑' : '↓') : ''}
+              </th>
+              <th
+                className="border px-2 py-1 cursor-pointer"
+                onClick={() => handleSort('avg_heliocentric_value')}
+              >
+                Avg Value {sortConfig.key === 'avg_heliocentric_value' ? (sortConfig.direction === 'asc' ? '↑' : '↓') : ''}
+              </th>
+              <th
+                className="border px-2 py-1 cursor-pointer"
+                onClick={() => handleSort('total_better_options')}
+              >
+                Better Options {sortConfig.key === 'total_better_options' ? (sortConfig.direction === 'asc' ? '↑' : '↓') : ''}
+              </th>
             </tr>
           </thead>
           <tbody>
-            {filteredData.map(row => (
+            {sortedData.map(row => (
               <tr key={row.player_id} className="hover:bg-gray-50">
                 <td className="border p-2 w-[60px]">
                   <img
@@ -187,7 +261,7 @@ export default function HeliocentricLeaderboard() {
         </table>
       )}
 
-      {!loading && leaderboardType && filteredData.length === 0 && (
+      {!loading && leaderboardType && sortedData.length === 0 && (
         <p className="text-gray-500">No players match the selected filters.</p>
       )}
     </div>
