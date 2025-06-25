@@ -9,12 +9,7 @@ export default function HeliocentricLeaderboard() {
   const [leaderboardData, setLeaderboardData] = useState([]);
   const [playerMap, setPlayerMap] = useState({});
   const [loading, setLoading] = useState(false);
-  const [filters, setFilters] = useState({
-    good: 0,
-    great: 0,
-    bad: 0,
-    terrible: 0,
-  });
+  const [filters, setFilters] = useState({ good: 0, great: 0, bad: 0, terrible: 0 });
   const [sortConfig, setSortConfig] = useState({ key: '', direction: 'asc' });
 
   useEffect(() => {
@@ -88,6 +83,11 @@ export default function HeliocentricLeaderboard() {
         .select('player_id, headshot')
         .in('player_id', playerIds);
 
+      const { data: shotMakers } = await supabase
+        .from('shot_maker')
+        .select('player_id, total_shots, avg_shot_maker_difficulty, total_shot_maker_difficulty, avg_shot_maker_difficulty_cat, total_shot_maker_difficulty_cat')
+        .in('player_id', playerIds);
+
       const map = {};
       for (const row of players || []) {
         map[row.player_id] = {
@@ -100,8 +100,27 @@ export default function HeliocentricLeaderboard() {
         map[row.player_id] = { ...map[row.player_id], headshot: row.headshot };
       }
 
+      const shotMakerMap = {};
+      for (const row of shotMakers || []) {
+        shotMakerMap[row.player_id] = row;
+      }
+
+      const isBoth = leaderboardType.toLowerCase() === "both_categorical";
+      const isCat = leaderboardType.toLowerCase() === "categorical" || isBoth;
+
+      const merged = allRows.map(row => {
+        const shot = shotMakerMap[row.player_id] || {};
+        return {
+          ...row,
+          avg_shot_maker_difficulty: isBoth ? `${shot.avg_shot_maker_difficulty?.toFixed(2)} / ${shot.avg_shot_maker_difficulty_cat?.toFixed(2)}` : isCat ? shot.avg_shot_maker_difficulty_cat : shot.avg_shot_maker_difficulty,
+          total_shot_maker_difficulty: isBoth ? `${shot.total_shot_maker_difficulty} / ${shot.total_shot_maker_difficulty_cat}` : isCat ? shot.total_shot_maker_difficulty_cat : shot.total_shot_maker_difficulty,
+          avg_shot_maker_difficulty_cat: shot.avg_shot_maker_difficulty_cat,
+          total_shot_maker_difficulty_cat: shot.total_shot_maker_difficulty_cat
+        };
+      });
+
       setPlayerMap(map);
-      setLeaderboardData(allRows);
+      setLeaderboardData(merged);
       setLoading(false);
     };
 
@@ -141,13 +160,15 @@ export default function HeliocentricLeaderboard() {
       : String(bVal).localeCompare(String(aVal));
   });
 
+ 
+  // ... (imports and state setup remain the same above)
+
   return (
     <div className="p-6">
       <p className="mb-4 text-sm text-gray-700">
-        This leaderboard highlights player decision-making based on my custom <strong>Heliocentric Shot Selection</strong> statistic — a metric that evaluates the expected value of a shot versus the best available teammate option on the floor. It measures how often players take good, great, bad, or terrible shots based on spatial tracking data.
-        <br />
-        <span className="italic">Note: This leaderboard only includes data from the <strong>2015-16 NBA season</strong>.</span>
+        This leaderboard highlights player decision-making based on my custom <strong>Heliocentric Shot Selection</strong> statistic — a metric that evaluates the expected value of a shot versus the best available teammate option on the floor...
       </p>
+
       <Image
         src="/images/ep_snapshot.png"
         alt="EP Snapshot"
@@ -155,10 +176,6 @@ export default function HeliocentricLeaderboard() {
         height={300}
         className="rounded shadow-md mb-6"
       />
-
-      <p className="text-sm text-gray-700 mb-6">
-          In this EP Snapshot example, the shooter (triangle) took a shot worth <strong>0.97 expected points (EP)</strong>, while the best available teammate (square) had an EP of <strong>1.14</strong>. According to the <strong>Max Teammate EP</strong> benchmark, this shot falls into a neutral zone—it&apos;s not significantly better to be classified as a great or good decision, but also not low enough to be considered a bad or terrible one. Classifications are based on how the shooter&apos;s EP compares to the best available teammate&apos;s EP using thresholds defined in the benchmark table (shown in the Heliocentric section under Brian&apos;s Portfolio). The <strong>Heliocentric Value</strong> for this shot is calculated as <code>(0.97 − 1.14) + 0.20 = +0.03</code>, quantifying how much better or worse the decision was relative to the best available option with a buffer for turnovers, shot clock violation, etc.
-      </p>
 
       <h2 className="text-2xl font-bold mb-4">Heliocentric Leaderboard</h2>
 
@@ -206,14 +223,16 @@ export default function HeliocentricLeaderboard() {
               <th className="border px-2 py-1">Headshot</th>
               <th className="border px-2 py-1">Player</th>
               <th className="border px-2 py-1">Position</th>
-              <th className="border px-2 py-1 cursor-pointer" onClick={() => handleSort('total_shots')}>Shots {sortConfig.key === 'total_shots' ? (sortConfig.direction === 'asc' ? '↑' : '↓') : ''}</th>
-              <th className="border px-2 py-1 cursor-pointer" onClick={() => handleSort('good_decision_pct')}>Good % {sortConfig.key === 'good_decision_pct' ? (sortConfig.direction === 'asc' ? '↑' : '↓') : ''}</th>
-              <th className="border px-2 py-1 cursor-pointer" onClick={() => handleSort('great_decision_pct')}>Great % {sortConfig.key === 'great_decision_pct' ? (sortConfig.direction === 'asc' ? '↑' : '↓') : ''}</th>
-              <th className="border px-2 py-1 cursor-pointer" onClick={() => handleSort('bad_decision_pct')}>Bad % {sortConfig.key === 'bad_decision_pct' ? (sortConfig.direction === 'asc' ? '↑' : '↓') : ''}</th>
-              <th className="border px-2 py-1 cursor-pointer" onClick={() => handleSort('terrible_decision_pct')}>Terrible % {sortConfig.key === 'terrible_decision_pct' ? (sortConfig.direction === 'asc' ? '↑' : '↓') : ''}</th>
-              <th className="border px-2 py-1 cursor-pointer" onClick={() => handleSort('avg_heliocentric_value')}>Avg Helio Value{sortConfig.key === 'avg_heliocentric_value' ? (sortConfig.direction === 'asc' ? '↑' : '↓') : ''}</th>
-              <th className="border px-2 py-1 cursor-pointer" onClick={() => handleSort('total_better_options')}>Better Options {sortConfig.key === 'total_better_options' ? (sortConfig.direction === 'asc' ? '↑' : '↓') : ''}</th>
-              <th className="border px-2 py-1 cursor-pointer" onClick={() => handleSort('total_heliocentric_value')}>Total Helio Value {sortConfig.key === 'total_heliocentric_value' ? (sortConfig.direction === 'asc' ? '↑' : '↓') : ''}</th>
+              <th className="border px-2 py-1 cursor-pointer" onClick={() => handleSort('total_shots')}>Shots</th>
+              <th className="border px-2 py-1 cursor-pointer" onClick={() => handleSort('good_decision_pct')}>Good %</th>
+              <th className="border px-2 py-1 cursor-pointer" onClick={() => handleSort('great_decision_pct')}>Great %</th>
+              <th className="border px-2 py-1 cursor-pointer" onClick={() => handleSort('bad_decision_pct')}>Bad %</th>
+              <th className="border px-2 py-1 cursor-pointer" onClick={() => handleSort('terrible_decision_pct')}>Terrible %</th>
+              <th className="border px-2 py-1 cursor-pointer" onClick={() => handleSort('avg_heliocentric_value')}>Avg Helio</th>
+              <th className="border px-2 py-1 cursor-pointer" onClick={() => handleSort('total_better_options')}>Better Options</th>
+              <th className="border px-2 py-1 cursor-pointer" onClick={() => handleSort('total_heliocentric_value')}>Total Helio</th>
+              <th className="border px-2 py-1 cursor-pointer" onClick={() => handleSort('avg_shot_maker_difficulty')}>Avg Shot Maker Value</th>
+              <th className="border px-2 py-1 cursor-pointer" onClick={() => handleSort('total_shot_maker_difficulty')}>Total Shot Maker Value</th>
             </tr>
           </thead>
           <tbody>
@@ -231,9 +250,7 @@ export default function HeliocentricLeaderboard() {
                     {playerMap[row.player_id]?.name || row.player_id}
                   </Link>
                 </td>
-                <td className="border px-2 py-1 text-center">
-                  {playerMap[row.player_id]?.position || '—'}
-                </td>
+                <td className="border px-2 py-1 text-center">{playerMap[row.player_id]?.position || '—'}</td>
                 <td className="border px-2 py-1 text-center">{row.total_shots}</td>
                 <td className="border px-2 py-1 text-center">{Math.round(row.good_decision_pct * 100)}%</td>
                 <td className="border px-2 py-1 text-center">{Math.round(row.great_decision_pct * 100)}%</td>
@@ -242,6 +259,8 @@ export default function HeliocentricLeaderboard() {
                 <td className="border px-2 py-1 text-center">{row.avg_heliocentric_value.toFixed(2)}</td>
                 <td className="border px-2 py-1 text-center">{row.total_better_options}</td>
                 <td className="border px-2 py-1 text-center">{row.total_heliocentric_value?.toFixed(2)}</td>
+                <td className="border px-2 py-1 text-center">{row.avg_shot_maker_difficulty}</td>
+                <td className="border px-2 py-1 text-center">{row.total_shot_maker_difficulty}</td>
               </tr>
             ))}
           </tbody>
