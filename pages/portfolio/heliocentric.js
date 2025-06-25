@@ -216,6 +216,149 @@ export default function HeliocentricModel() {
       <p className="mb-4">
         XGBoost worked well here because it&apos;s flexible, performs well on big datasets, and gives a clear picture of which variables are doing the heavy lifting — all of which helped me better understand how shot decisions shape offensive efficiency in heliocentric systems.
       </p>
+      <h2 className="text-2xl font-semibold mt-6 mb-2">Results</h2>
+      <p className="mb-4">
+        The Heliocentric Decision-Making model offered a sharper lens into how NBA players navigate offensive decisions — and just how often they pass up better ones. By comparing the expected points (EP) of the shooter to the expected outcomes of their teammates at the time of the shot, we were able to turn subjective film reads into objective, possession-level insights.
+      </p>
+      <p className="mb-4">
+        Across thousands of NBA possessions, we found:
+      </p>
+      <ul className="list-disc list-inside mb-4">
+        <li>Shooters made decisions that outperformed their average teammate's EP about 56% of the time.</li>
+        <li>Against the top two teammate options, that dropped to 42%.</li>
+        <li>When compared to the best available option, shooters made the ideal decision just 33% of the time.</li>
+      </ul>
+      <p className="mb-4">
+        In other words, roughly two-thirds of the time, the player who shot could have passed to someone with a higher expected return.To make sense of this, we categorized decision-making into four tiers, adjusting the thresholds based on the context of comparison:
+      </p>
+
+      <div className="overflow-x-auto mb-4">
+        <table className="table-auto border-collapse border border-gray-300 text-sm">
+          <thead>
+            <tr className="bg-gray-100">
+              <th className="border border-gray-300 px-4 py-2">Benchmark</th>
+              <th className="border border-gray-300 px-4 py-2">Great Decision</th>
+              <th className="border border-gray-300 px-4 py-2">Good Decision</th>
+              <th className="border border-gray-300 px-4 py-2">Bad Decision</th>
+              <th className="border border-gray-300 px-4 py-2">Terrible Decision</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td className="border border-gray-300 px-4 py-2">Max Teammate EP (m_EP)</td>
+              <td className="border border-gray-300 px-4 py-2">EP ≥ m_EP + 0.20</td>
+              <td className="border border-gray-300 px-4 py-2">EP ≥ m_EP + 0.00</td>
+              <td className="border border-gray-300 px-4 py-2">EP ≤ m_EP − 0.25</td>
+              <td className="border border-gray-300 px-4 py-2">EP ≤ m_EP − 0.35</td>
+            </tr>
+            <tr>
+              <td className="border border-gray-300 px-4 py-2">Top-2 Teammates EP (2_EP)</td>
+              <td className="border border-gray-300 px-4 py-2">EP ≥ 2_EP + 0.15</td>
+              <td className="border border-gray-300 px-4 py-2">EP ≥ 2_EP + 0.05</td>
+              <td className="border border-gray-300 px-4 py-2">EP ≤ 2_EP − 0.20</td>
+              <td className="border border-gray-300 px-4 py-2">EP ≤ 2_EP − 0.30</td>
+            </tr>
+            <tr>
+              <td className="border border-gray-300 px-4 py-2">Average Teammate EP (A_EP)</td>
+              <td className="border border-gray-300 px-4 py-2">EP ≥ A_EP + 0.15</td>
+              <td className="border border-gray-300 px-4 py-2">EP ≥ A_EP + 0.00</td>
+              <td className="border border-gray-300 px-4 py-2">EP ≤ A_EP − 0.20</td>
+              <td className="border border-gray-300 px-4 py-2">EP ≤ A_EP − 0.30</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <p className="mb-4">
+        These weren&apos;t arbitrary cutoffs — they were calibrated using the distribution of real EP values, ensuring each decision tier reflects a meaningful difference in shot quality. A “terrible” decision might mean a player forced a contested fadeaway while a teammate stood open in the corner. A “great” decision might reflect a smart relocation or self-created look that outperformed all available alternatives.
+      </p>
+      <p className="mb-4">
+        We also introduced a <strong>Heliocentric Value Score</strong>, measuring the net difference between a player&apos;s shot and a given teammate benchmark (average, top-2, or max). This lets us rank players based on their decision-making efficiency, not just their raw output or usage rate.
+      </p>
+      <p className="mb-4">
+        Depending on your lens:
+      </p>
+      <ul className="list-disc list-inside mb-4">
+        <li><strong>Max Teammate EP:</strong> Are they consistently missing elite reads?</li>
+        <li><strong>Top-2 EP:</strong> Do they ignore multiple good options?</li>
+        <li><strong>Average EP:</strong> Are they raising or dragging down team flow?</li>
+      </ul>
+
+      <p className="mb-4">
+        To make the data even more actionable, we&apos;ve created <strong>interactive Heliocentric Leaderboards</strong> that let you sort players by context, usage, and decision quality across these benchmarks.
+      </p>
+      <p className="mb-4">
+        What we found was a wide range of tendencies. Some players consistently add value by taking high-EP shots, leveraging spacing, or manipulating defenders to create their own look. Others routinely fire over better options, missing chances to optimize the possession.
+      </p>
+      <p className="mb-4">
+        Whether you're a coach developing smarter habits, a front office evaluating fit and decision-making under pressure, or a scout looking for unselfish creators, this model gives you a new way to track not just who shoots — but how well they process the floor in real time.
+      </p>
+      <h2 className="text-2xl font-semibold mt-6 mb-2">Model Applications</h2>
+      <p className="mb-4">
+        The beauty of this model is how much you can get out of so little. With just three inputs — shot distance, court zone (based on x/y location), and closest defender distance — we can break down any offensive possession and estimate expected points (EP) for every offensive player on the floor, not just the one who took the shot.
+      </p>
+
+      <Image
+        src="/images/ep_snapshot.png"
+        alt="EP Snapshot"
+        width={600}
+        height={300}
+        className="rounded shadow-md mb-6"
+      />
+      <p className="mb-4">
+        As shown in the graphic above, each offensive player gets two EP values. The top number comes from the categorical model, which groups defender distance into ranges like “tight” or “open” to reflect how players feel a contest. The bottom number comes from the continuous model, which uses the exact defender distance to produce more detailed predictions. This two-model setup gives us flexibility. The categorical model is great for coaching and labeling behaviors — like tagging when a player takes a contested jumper. The continuous model is better suited for regression analysis or tracking small trends over time.
+      </p>
+      <p className="mb-4">
+        With just player and defender locations, we can spot poor shot decisions by comparing the shooter&apos;s EP to their teammates&apos;, flag possessions where better options were missed, or even diagnose situations where nobody had a good look — which tells us it might be a play design issue, not just a player mistake. It also helps us measure gravity — how a player's movement or presence can create higher-value chances for others, even if they never touch the ball.
+      </p>
+      <p className="mb-4">
+        One of the most useful parts? We don&apos;t need to know whether the shot actually went in. That means we can use this tool live or retroactively, and it scales easily — whether you&apos;re looking at NBA tracking data, Synergy clips from college, or even international leagues with basic player mapping.
+      </p>
+      <p className="mb-4">
+        It also helps you measure gravity — identifying players who consistently create better scoring opportunities for teammates just by moving or spacing correctly, even if they don&apos;t end up in the box score.
+      </p>
+      <h3 className="text-xl font-semibold mt-6 mb-2">Player Development</h3>
+      <p className="mb-4">
+        This model can help players make smarter decisions, especially primary ball handlers. You can show them clips where they took tough shots while a teammate had a better look — backed by numbers, not just coach&apos;s intuition. It&apos;s also a great tool to reinforce ball movement by highlighting when high-EP teammates were open but ignored. On the flip side, it can show off-ball players the value they bring through cutting, spacing, or relocating into high-EP areas — giving them clearer development goals. And by comparing actual shot outcomes to predicted EP, coaches can identify players who are getting unlucky versus those who may be forcing low-value looks.
+      </p>
+
+      <h3 className="text-xl font-semibold mt-6 mb-2">Coaching & Game Planning</h3>
+      <p className="mb-4">
+        For coaches, this model becomes a playbook audit tool. You can use it postgame to pinpoint inefficient possessions — like when someone passed up an open three or forced a tough midrange. You can also evaluate how well your offensive sets create multiple good options, and where the breakdowns happen. On the defensive side, you can identify matchups where opponents are consistently getting good looks — even if the box score doesn&apos;t show it yet. This kind of insight adds depth to scouting reports and game prep.
+      </p>
+
+      <h3 className="text-xl font-semibold mt-6 mb-2">Front Office & Analytics</h3>
+      <p className="mb-4">
+        From a team-building perspective, the model adds context to high-usage players. Are they actually creating value, or just taking a lot of shots? It also helps spot undervalued players — guys who regularly get into high-EP areas but don&apos;t see the ball, which could point to untapped upside. It&apos;s a useful tool for lineup evaluation too — showing how different combinations change shot quality and spacing. Over time, you can even build player archetypes based on EP profiles — like “gravity shooters,” “connectors,” or “ball-stoppers” — which can help shape your roster strategy.
+      </p>
+
+      <h3 className="text-xl font-semibold mt-6 mb-2">Scouting & Opponent Preparation</h3>
+      <p className="mb-4">
+        For scouting, you can build EP-based shot maps to see who forces tough looks and who consistently passes up good ones. It also reveals defensive tendencies — like whether a team over-helps and leaves shooters open, or plays conservative and forces isolations. If you&apos;re preparing for a playoff series or evaluating a potential free agent, this gives you a deeper layer beyond highlights and counting stats.
+      </p>
+
+      <h3 className="text-xl font-semibold mt-6 mb-2">Why It Scales</h3>
+      <p className="mb-4">
+        What makes this so scalable is its simplicity. You don&apos;t need proprietary tracking data or years of historical stats. All you need is player and defender location, shot distance, and court zone. That opens the door to use it in a ton of settings — NBA teams with optical tracking, college programs with Synergy tagging, overseas teams combining video and player charts, even grassroots programs using AI video tools. Whether you&apos;re trying to build smarter scouting reports, train players to make better decisions, or evaluate how guys fit into your system, this model gives you a flexible, customizable lens into the decision-making process behind every possession.
+      </p>
+      <h2 className="text-2xl font-semibold mt-6 mb-2">Next Steps</h2>
+      <p className="mb-4">
+        Now that we&apos;ve built a solid foundation for evaluating offensive decisions, there&apos;s a lot of potential to expand this framework into other areas — especially on the defensive end, in scouting prep, and in how we think about playmaking.
+      </p>
+      <p className="mb-4">
+        One natural next step is creating a <strong>Defensive Shot Quality Evaluation</strong>, or what you might call a “Luck Index.” The idea is simple: compare the expected points (EP) for each shot — based on location and contest — to what actually happened. If a team keeps allowing high-EP shots that are just missing, they&apos;re probably not defending as well as it looks. On the flip side, if opponents are hitting tough, low-EP shots, that could be bad luck or just elite shot-making. Either way, it gives us a better way to evaluate defensive performance without relying solely on whether the ball went in. It&apos;s especially useful for spotting teams that might be due for regression — or those that are quietly elite but getting unlucky.
+      </p>
+      <p className="mb-4">
+        Another area to explore is <strong>Over-Help and Rotation Tendencies</strong>. With this model, we can track when defenders leave their man to provide help and what kind of looks that creates elsewhere. Are they giving up high-EP opportunities on the weak side? Are certain players drawing multiple defenders without even shooting? We can dig into that. It&apos;s a great way to spot which offensive actions trigger breakdowns — whether it&apos;s isolation drives, post touches, or ball screens — and which defenders or team schemes are vulnerable. You could build heatmaps showing where help is coming from, or use expected closeout times to show when rotations are too slow to matter. It&apos;s the kind of stuff that doesn&apos;t show up in a box score but completely changes a possession.
+      </p>
+      <p className="mb-4">
+        We can also take the model one step further by building an <strong>Assist Opportunity Model</strong>. This shifts the focus from just “did the player pass?” to “should they have passed?” On every possession, we can identify teammates who were open in high-EP spots, even if the ball never got to them. That lets us track missed assists — not just in terms of stats left on the table, but in terms of decision-making. Are certain players drawing attention but failing to find open teammates? Are others consistently making the right read, even if the shot doesn&apos;t fall? This kind of insight helps reframe how we define playmaking — not just based on assists, but on the quality of decisions. And it&apos;s perfect for film breakdowns and development — showing players when they had a high-value pass available and what they missed.
+      </p>
+      <p className="mb-4">
+        Together, these ideas unlock a much broader view of the game. You could build a full analytics suite around them — defensive dashboards, playmaker recognition tools, rotation breakdown visualizations — whatever fits your team&apos;s needs. And if you want to take it further, they can all be built into radar charts, interactive visuals, or scouting dashboards to help coaches, players, and execs make smarter decisions across the board.
+      </p>
+
+
     </div>
   );
 }

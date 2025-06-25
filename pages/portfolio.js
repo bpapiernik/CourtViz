@@ -9,6 +9,18 @@ export default function Portfolio() {
       </p>
 
       <div className="space-y-6">
+        {/* Heliocentric Project */}
+        <div className="border rounded-lg p-4 shadow-md hover:shadow-lg transition">
+          <h2 className="text-xl font-semibold mb-2">
+            <Link href="/portfolio/heliocentric" className="text-blue-600 hover:underline">
+              Heliocentric Shot Decision-Making Model
+            </Link>
+          </h2>
+          <p className="text-gray-700">
+            Quantifying shot selection and passing decisions using expected points (EP) across every offensive player on the court. Built with XGBoost and NBA tracking data to power player evaluation, coaching feedback, and playmaking insights.
+          </p>
+        </div>
+
         {/* March Madness Project */}
         <div className="border rounded-lg p-4 shadow-md hover:shadow-lg transition">
           <h2 className="text-xl font-semibold mb-2">
@@ -36,4 +48,3 @@ export default function Portfolio() {
     </div>
   );
 }
-
