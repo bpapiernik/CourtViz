@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { supabase } from '../lib/supabaseClient';
 import Link from 'next/link';
+import Image from 'next/image';
 
 export default function HeliocentricLeaderboard() {
   const [leaderboardType, setLeaderboardType] = useState('');
