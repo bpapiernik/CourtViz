@@ -271,7 +271,7 @@ export default function HeliocentricLeaderboard() {
                 </td>
                 <td className="border px-2 py-1 text-center">
                   {(leaderboardType.toLowerCase().includes('categorical') && !leaderboardType.toLowerCase().includes('both'))
-                    ? row.total_shot_maker_difficulty_cat
+                    ? row.total_shot_maker_difficulty_cat?.toFixed(2)
                     : (leaderboardType.toLowerCase().includes('both')
                         ? row.total_shot_maker_difficulty
                         : row.total_shot_maker_difficulty?.toFixed(2))}
