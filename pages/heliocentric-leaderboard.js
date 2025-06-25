@@ -39,18 +39,30 @@ export default function HeliocentricLeaderboard() {
     setLoading(true);
 
     const fetchData = async () => {
-      const { data: leaderboardRows, error } = await supabase
-        .from('heliocentric_leaderboard')
-        .select('*')
-        .eq('leaderboard_type', leaderboardType);
+      let allRows = [];
+      let start = 0;
+      const batchSize = 1000;
+      let finished = false;
 
-      if (error) {
-        console.error('Error fetching leaderboard data:', error);
-        setLoading(false);
-        return;
+      while (!finished) {
+        const { data, error } = await supabase
+          .from('heliocentric_leaderboard')
+          .select('*')
+          .eq('leaderboard_type', leaderboardType)
+          .range(start, start + batchSize - 1);
+
+        if (error) {
+          console.error('Error fetching leaderboard data:', error);
+          setLoading(false);
+          return;
+        }
+
+        allRows = allRows.concat(data);
+        if (data.length < batchSize) finished = true;
+        start += batchSize;
       }
 
-      const playerIds = leaderboardRows.map(row => row.player_id);
+      const playerIds = allRows.map(row => row.player_id);
 
       const { data: players } = await supabase
         .from('players')
@@ -71,9 +83,10 @@ export default function HeliocentricLeaderboard() {
       }
 
       setPlayerMap(map);
-      setLeaderboardData(leaderboardRows);
+      setLeaderboardData(allRows);
       setLoading(false);
     };
+
 
     fetchData();
   }, [leaderboardType]);
@@ -135,6 +148,7 @@ export default function HeliocentricLeaderboard() {
         <table className="w-full border text-sm">
           <thead>
             <tr className="bg-gray-100">
+              <th className="border px-2 py-1">Headshot</th>
               <th className="border px-2 py-1">Player</th>
               <th className="border px-2 py-1">Shots</th>
               <th className="border px-2 py-1">Good %</th>
@@ -148,16 +162,14 @@ export default function HeliocentricLeaderboard() {
           <tbody>
             {filteredData.map(row => (
               <tr key={row.player_id} className="hover:bg-gray-50">
-                <td className="border px-2 py-1 flex items-center gap-2">
-                  {playerMap[row.player_id]?.headshot && (
-                    <Image
-                      src={playerMap[row.player_id].headshot}
-                      alt={playerMap[row.player_id]?.name || 'Player'}
-                      width={24}
-                      height={24}
-                      className="rounded-full"
-                    />
-                  )}
+                <td className="border p-2 w-[60px]">
+                  <img
+                    src={playerMap[row.player_id]?.headshot || '/default-headshot.png'}
+                    alt={playerMap[row.player_id]?.name || 'Player'}
+                    className="w-10 h-10 object-cover rounded-full mx-auto"
+                  />
+                </td>
+                <td className="border px-2 py-1">
                   <Link href={`/player/${row.player_id}`} className="text-blue-700 underline">
                     {playerMap[row.player_id]?.name || row.player_id}
                   </Link>
