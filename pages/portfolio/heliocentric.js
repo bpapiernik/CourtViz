@@ -224,7 +224,7 @@ export default function HeliocentricModel() {
         Across thousands of NBA possessions, we found:
       </p>
       <ul className="list-disc list-inside mb-4">
-        <li>Shooters made decisions that outperformed their average teammate's EP about 56% of the time.</li>
+        <li>Shooters made decisions that outperformed their average teammate&apos;s EP about 56% of the time.</li>
         <li>Against the top two teammate options, that dropped to 42%.</li>
         <li>When compared to the best available option, shooters made the ideal decision just 33% of the time.</li>
       </ul>
@@ -291,7 +291,7 @@ export default function HeliocentricModel() {
         What we found was a wide range of tendencies. Some players consistently add value by taking high-EP shots, leveraging spacing, or manipulating defenders to create their own look. Others routinely fire over better options, missing chances to optimize the possession.
       </p>
       <p className="mb-4">
-        Whether you're a coach developing smarter habits, a front office evaluating fit and decision-making under pressure, or a scout looking for unselfish creators, this model gives you a new way to track not just who shoots — but how well they process the floor in real time.
+        Whether you&apos;re a coach developing smarter habits, a front office evaluating fit and decision-making under pressure, or a scout looking for unselfish creators, this model gives you a new way to track not just who shoots — but how well they process the floor in real time.
       </p>
       <h2 className="text-2xl font-semibold mt-6 mb-2">Model Applications</h2>
       <p className="mb-4">
@@ -309,7 +309,7 @@ export default function HeliocentricModel() {
         As shown in the graphic above, each offensive player gets two EP values. The top number comes from the categorical model, which groups defender distance into ranges like “tight” or “open” to reflect how players feel a contest. The bottom number comes from the continuous model, which uses the exact defender distance to produce more detailed predictions. This two-model setup gives us flexibility. The categorical model is great for coaching and labeling behaviors — like tagging when a player takes a contested jumper. The continuous model is better suited for regression analysis or tracking small trends over time.
       </p>
       <p className="mb-4">
-        With just player and defender locations, we can spot poor shot decisions by comparing the shooter&apos;s EP to their teammates&apos;, flag possessions where better options were missed, or even diagnose situations where nobody had a good look — which tells us it might be a play design issue, not just a player mistake. It also helps us measure gravity — how a player's movement or presence can create higher-value chances for others, even if they never touch the ball.
+        With just player and defender locations, we can spot poor shot decisions by comparing the shooter&apos;s EP to their teammates&apos;, flag possessions where better options were missed, or even diagnose situations where nobody had a good look — which tells us it might be a play design issue, not just a player mistake. It also helps us measure gravity — how a player&apos;s movement or presence can create higher-value chances for others, even if they never touch the ball.
       </p>
       <p className="mb-4">
         One of the most useful parts? We don&apos;t need to know whether the shot actually went in. That means we can use this tool live or retroactively, and it scales easily — whether you&apos;re looking at NBA tracking data, Synergy clips from college, or even international leagues with basic player mapping.
