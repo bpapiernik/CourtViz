@@ -199,9 +199,9 @@ export default function HeliocentricLeaderboard() {
               <th className="border px-2 py-1 cursor-pointer" onClick={() => handleSort('great_decision_pct')}>Great % {sortConfig.key === 'great_decision_pct' ? (sortConfig.direction === 'asc' ? '↑' : '↓') : ''}</th>
               <th className="border px-2 py-1 cursor-pointer" onClick={() => handleSort('bad_decision_pct')}>Bad % {sortConfig.key === 'bad_decision_pct' ? (sortConfig.direction === 'asc' ? '↑' : '↓') : ''}</th>
               <th className="border px-2 py-1 cursor-pointer" onClick={() => handleSort('terrible_decision_pct')}>Terrible % {sortConfig.key === 'terrible_decision_pct' ? (sortConfig.direction === 'asc' ? '↑' : '↓') : ''}</th>
-              <th className="border px-2 py-1 cursor-pointer" onClick={() => handleSort('avg_heliocentric_value')}>Avg Value {sortConfig.key === 'avg_heliocentric_value' ? (sortConfig.direction === 'asc' ? '↑' : '↓') : ''}</th>
+              <th className="border px-2 py-1 cursor-pointer" onClick={() => handleSort('avg_heliocentric_value')}>Avg Helio Value{sortConfig.key === 'avg_heliocentric_value' ? (sortConfig.direction === 'asc' ? '↑' : '↓') : ''}</th>
               <th className="border px-2 py-1 cursor-pointer" onClick={() => handleSort('total_better_options')}>Better Options {sortConfig.key === 'total_better_options' ? (sortConfig.direction === 'asc' ? '↑' : '↓') : ''}</th>
-              <th className="border px-2 py-1 cursor-pointer" onClick={() => handleSort('total_heliocentric_value')}>Total Value {sortConfig.key === 'total_heliocentric_value' ? (sortConfig.direction === 'asc' ? '↑' : '↓') : ''}</th>
+              <th className="border px-2 py-1 cursor-pointer" onClick={() => handleSort('total_heliocentric_value')}>Total Helio Value {sortConfig.key === 'total_heliocentric_value' ? (sortConfig.direction === 'asc' ? '↑' : '↓') : ''}</th>
             </tr>
           </thead>
           <tbody>
