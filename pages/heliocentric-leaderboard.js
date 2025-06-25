@@ -161,14 +161,14 @@ export default function HeliocentricLeaderboard() {
   });
 
  
-  // ... (imports and state setup remain the same above)
 
   return (
     <div className="p-6">
       <p className="mb-4 text-sm text-gray-700">
-        This leaderboard highlights player decision-making based on my custom <strong>Heliocentric Shot Selection</strong> statistic — a metric that evaluates the expected value of a shot versus the best available teammate option on the floor...
+        This leaderboard highlights player decision-making based on my custom <strong>Heliocentric Shot Selection</strong> statistic — a metric that evaluates the expected value of a shot versus the best available teammate option on the floor. It measures how often players take good, great, bad, or terrible shots based on spatial tracking data.
+        <br />
+        <span className="italic">Note: This leaderboard only includes data from the <strong>2015-16 NBA season</strong>.</span>
       </p>
-
       <Image
         src="/images/ep_snapshot.png"
         alt="EP Snapshot"
@@ -177,6 +177,9 @@ export default function HeliocentricLeaderboard() {
         className="rounded shadow-md mb-6"
       />
 
+      <p className="text-sm text-gray-700 mb-6">
+          In this EP Snapshot example, the shooter (triangle) took a shot worth <strong>0.97 expected points (EP)</strong>, while the best available teammate (square) had an EP of <strong>1.14</strong>. According to the <strong>Max Teammate EP</strong> benchmark, this shot falls into a neutral zone—it&apos;s not significantly better to be classified as a great or good decision, but also not low enough to be considered a bad or terrible one. Classifications are based on how the shooter&apos;s EP compares to the best available teammate&apos;s EP using thresholds defined in the benchmark table (shown in the Heliocentric section under Brian&apos;s Portfolio). The <strong>Heliocentric Value</strong> for this shot is calculated as <code>(0.97 − 1.14) + 0.20 = +0.03</code>, quantifying how much better or worse the decision was relative to the best available option with a buffer for turnovers, shot clock violation, etc.
+      </p>
       <h2 className="text-2xl font-bold mb-4">Heliocentric Leaderboard</h2>
 
       <div className="mb-6">
@@ -259,8 +262,21 @@ export default function HeliocentricLeaderboard() {
                 <td className="border px-2 py-1 text-center">{row.avg_heliocentric_value.toFixed(2)}</td>
                 <td className="border px-2 py-1 text-center">{row.total_better_options}</td>
                 <td className="border px-2 py-1 text-center">{row.total_heliocentric_value?.toFixed(2)}</td>
-                <td className="border px-2 py-1 text-center">{row.avg_shot_maker_difficulty}</td>
-                <td className="border px-2 py-1 text-center">{row.total_shot_maker_difficulty}</td>
+                <td className="border px-2 py-1 text-center">
+                  {(leaderboardType.toLowerCase().includes('categorical') && !leaderboardType.toLowerCase().includes('both'))
+                    ? row.avg_shot_maker_difficulty_cat?.toFixed(2)
+                    : (leaderboardType.toLowerCase().includes('both')
+                        ? row.avg_shot_maker_difficulty
+                        : row.avg_shot_maker_difficulty?.toFixed(2))}
+                </td>
+                <td className="border px-2 py-1 text-center">
+                  {(leaderboardType.toLowerCase().includes('categorical') && !leaderboardType.toLowerCase().includes('both'))
+                    ? row.total_shot_maker_difficulty_cat
+                    : (leaderboardType.toLowerCase().includes('both')
+                        ? row.total_shot_maker_difficulty
+                        : row.total_shot_maker_difficulty?.toFixed(2))}
+                </td>
+
               </tr>
             ))}
           </tbody>
