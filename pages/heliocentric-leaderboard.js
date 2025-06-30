@@ -185,7 +185,7 @@ export default function HeliocentricLeaderboard() {
       <div className="mb-6">
         <label className="block font-semibold mb-1">Leaderboard Type:</label>
         <select
-          className="border p-2 rounded w-full"
+          className="bg-white text-black border border-gray-300 p-2 rounded w-full focus:outline-none focus:ring-2 focus:ring-blue-500"
           value={leaderboardType}
           onChange={(e) => setLeaderboardType(e.target.value)}
         >
@@ -204,7 +204,7 @@ export default function HeliocentricLeaderboard() {
               type="number"
               min={0}
               max={100}
-              className="border p-1 rounded w-full"
+              className="bg-white text-black border border-gray-300 p-1 rounded w-full focus:outline-none focus:ring-2 focus:ring-blue-500"
               value={filters[type]}
               onChange={(e) =>
                 setFilters(prev => ({

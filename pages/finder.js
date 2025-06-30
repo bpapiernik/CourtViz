@@ -286,7 +286,7 @@ export default function Finder() {
       <div className="grid grid-cols-3 gap-6 mb-6">
         <div>
           <label className="block font-semibold mb-1">Season:</label>
-          <select className="border p-2 rounded w-full" value={season} onChange={(e) => setSeason(e.target.value)}>
+          <select className="bg-white text-black border border-gray-300 p-2 rounded w-full focus:outline-none focus:ring-2 focus:ring-blue-500" value={season} onChange={(e) => setSeason(e.target.value)}>
             <option value="2024-25">2024-25</option>
             <option value="2023-24">2023-24</option>
             <option value="2022-23">2022-23</option>
@@ -302,12 +302,12 @@ export default function Finder() {
 
         <div>
           <label className="block font-semibold mb-1">Min Age:</label>
-          <input type="number" className="border p-2 rounded w-full" value={ageMin} onChange={(e) => setAgeMin(Number(e.target.value))} />
+          <input type="number" className="bg-white text-black border border-gray-300 p-2 rounded w-full focus:outline-none focus:ring-2 focus:ring-blue-500" value={ageMin} onChange={(e) => setAgeMin(Number(e.target.value))} />
         </div>
 
         <div>
           <label className="block font-semibold mb-1">Max Age:</label>
-          <input type="number" className="border p-2 rounded w-full" value={ageMax} onChange={(e) => setAgeMax(Number(e.target.value))} />
+          <input type="number" className="bg-white text-black border border-gray-300 p-2 rounded w-full focus:outline-none focus:ring-2 focus:ring-blue-500" value={ageMax} onChange={(e) => setAgeMax(Number(e.target.value))} />
         </div>
       </div>
 
@@ -321,7 +321,7 @@ export default function Finder() {
               newFilters[index].stat = e.target.value;
               setStatFilters(newFilters);
             }}
-            className="border px-2 py-1 rounded"
+            className="bg-white text-black border border-gray-300 px-2 py-1 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
           >
             {availableStats.map(s => (
               <option key={s.key} value={s.key}>{s.label}</option>

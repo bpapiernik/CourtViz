@@ -62,7 +62,7 @@ export default function SearchPage() {
       <h1 className="text-2xl font-bold mb-4">Search Players</h1>
       <div className="flex gap-2 mb-4">
         <input
-          className="border px-3 py-2 rounded w-full max-w-md"
+          className="bg-white text-black border border-gray-300 px-3 py-2 rounded w-full max-w-md focus:outline-none focus:ring-2 focus:ring-blue-500"
           type="text"
           placeholder="Search by name or player ID"
           value={query}

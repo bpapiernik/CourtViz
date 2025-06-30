@@ -449,7 +449,7 @@ export default function PlayerPage() {
             <select
               value={selectedSynergySeason}
               onChange={(e) => setSelectedSynergySeason(e.target.value)}
-              className="border px-2 py-1 rounded"
+              className="bg-white text-black border border-gray-300 px-2 py-1 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
             >
               {[...new Set(synergyRows.map(r => r.SEASON))].map(season => (
                 <option key={season} value={season}>{season}</option>
@@ -460,14 +460,14 @@ export default function PlayerPage() {
             <select
               value={selectedTypeGroup}
               onChange={(e) => setSelectedTypeGroup(e.target.value)}
-              className="border px-2 py-1 rounded"
+              className="bg-white text-black border border-gray-300 px-2 py-1 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
             >
               <option value="offensive">Offensive</option>
               <option value="defensive">Defensive</option>
             </select>
 
             <label className="font-semibold ml-6">Team:</label>
-            <select value={selectedTeam} onChange={(e) => setSelectedTeam(e.target.value)} className="border px-2 py-1 rounded">
+            <select value={selectedTeam} onChange={(e) => setSelectedTeam(e.target.value)} className="bg-white text-black border border-gray-300 px-2 py-1 rounded focus:outline-none focus:ring-2 focus:ring-blue-500">
               {teamOptions.map(teamId => (
                 <option key={teamId} value={teamId}>
                   {teamIdToName[teamId] || teamId}
@@ -500,7 +500,7 @@ export default function PlayerPage() {
             <select
               value={shotChartSeason}
               onChange={(e) => setShotChartSeason(e.target.value)}
-              className="border px-2 py-1 rounded ml-2"
+              className="bg-white text-black border border-gray-300 px-2 py-1 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
             >
               {seasons.map(s => (
                 <option key={s} value={s}>{s}</option>
@@ -518,28 +518,28 @@ export default function PlayerPage() {
       <div className="mb-6 flex flex-wrap gap-4 items-center">
         <div>
           <label className="mr-2 font-semibold">Season:</label>
-          <select value={selectedSeason} onChange={(e) => setSelectedSeason(e.target.value)} className="border px-2 py-1 rounded">
+          <select value={selectedSeason} onChange={(e) => setSelectedSeason(e.target.value)} className="bg-white text-black border border-gray-300 px-2 py-1 rounded focus:outline-none focus:ring-2 focus:ring-blue-500">
             <option value="">-- Select --</option>
             {seasons.map(s => <option key={s} value={s}>{s}</option>)}
           </select>
         </div>
         <div>
           <label className="mr-2 font-semibold">Age:</label>
-          <select value={selectedAge} onChange={(e) => setSelectedAge(e.target.value)} className="border px-2 py-1 rounded">
+          <select value={selectedAge} onChange={(e) => setSelectedAge(e.target.value)} className="bg-white text-black border border-gray-300 px-2 py-1 rounded focus:outline-none focus:ring-2 focus:ring-blue-500">
             <option value="">-- Select --</option>
             {ageOptions.map(a => <option key={a} value={a}>{a}</option>)}
           </select>
         </div>
         <div>
           <label className="mr-2 font-semibold">Experience:</label>
-          <select value={selectedExperience} onChange={(e) => setSelectedExperience(e.target.value)} className="border px-2 py-1 rounded">
+          <select value={selectedExperience} onChange={(e) => setSelectedExperience(e.target.value)} className="bg-white text-black border border-gray-300 px-2 py-1 rounded focus:outline-none focus:ring-2 focus:ring-blue-500">
             <option value="">-- Select --</option>
             {experienceOptions.map(e => <option key={e} value={e}>{e}</option>)}
           </select>
         </div>
         <div>
           <label className="mr-2 font-semibold">Position Season:</label>
-          <select value={selectedPositionSeason} onChange={(e) => setSelectedPositionSeason(e.target.value)} className="border px-2 py-1 rounded">
+          <select value={selectedPositionSeason} onChange={(e) => setSelectedPositionSeason(e.target.value)} className="bg-white text-black border border-gray-300 px-2 py-1 rounded focus:outline-none focus:ring-2 focus:ring-blue-500">
             <option value="">-- Select --</option>
             {positionSeasons.map(p => <option key={p} value={p}>{p}</option>)}
           </select>
