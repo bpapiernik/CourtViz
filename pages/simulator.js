@@ -85,7 +85,7 @@ export default function Simulator() {
               const [t, y] = e.target.value.split('__');
               setTeam1({ team: t, year: parseInt(y) });
             }}
-            className="border px-3 py-2 w-full rounded shadow-sm"
+            className="bg-white text-black border border-gray-300 px-3 py-2 w-full rounded shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
           >
             {teams.map(({ team, year }) => (
               <option key={`${team}__${year}`} value={`${team}__${year}`}>
@@ -104,7 +104,7 @@ export default function Simulator() {
               const [t, y] = e.target.value.split('__');
               setTeam2({ team: t, year: parseInt(y) });
             }}
-            className="border px-3 py-2 w-full rounded shadow-sm"
+            className="bg-white text-black border border-gray-300 px-3 py-2 w-full rounded shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
           >
             {teams.map(({ team, year }) => (
               <option key={`${team}__${year}`} value={`${team}__${year}`}>
