@@ -335,7 +335,7 @@ export default function Finder() {
               newFilters[index].min = Number(e.target.value);
               setStatFilters(newFilters);
             }}
-            className="border px-2 py-1 rounded w-24"
+            className="bg-white text-black border border-gray-300 px-2 py-1 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
             placeholder="Min %"
           />
           <button

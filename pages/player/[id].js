@@ -559,7 +559,7 @@ export default function PlayerPage() {
           <div key={label}>
             <h3 className="font-semibold mb-2">{label}</h3>
             <select
-              className="mb-2 border px-2 py-1 rounded"
+              className="bg-white text-black border border-gray-300 px-2 py-1 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
               value={group}
               onChange={(e) => setGroup(e.target.value)}
             >
