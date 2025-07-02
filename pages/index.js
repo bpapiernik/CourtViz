@@ -36,7 +36,7 @@ export default function Home() {
         <div className="flex flex-col md:flex-row gap-6 items-center mt-4">
           <img src="/brian.png" alt="Brian Papiernik" className="h-40 w-40 rounded-full border object-cover" />
           <p className="text-lg leading-relaxed">
-            My names is Brian Papiernik — a sports data scientist with experience across baseball, basketball, and multi-sport performance analysis.
+            My name is Brian Papiernik — a sports data scientist with experience across baseball, basketball, and multi-sport performance analysis.
             I’ve worked as a Baseball Technology Operator for the Tampa Bay Rays, a Baseball Student Manager with Notre Dame Baseball, and hold a Master’s degree in Sports Analytics from Notre Dame.
             I specialize in building end-to-end analytics pipelines, predictive models, and interactive tools for evaluating players and strategies.
             CourtViz is where I bring together my passion for sports, data, and clean design.
