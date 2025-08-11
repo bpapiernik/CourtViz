@@ -79,6 +79,25 @@ export default function Blogs() {
           </a>
         </Link>
       </div>
+      {/* Notre Dame CBB Preview */}
+      <div className="border p-4 rounded-lg hover:shadow transition">
+        <Link href="/blogs/notre-dame-cbb" passHref>
+          <a className="block">
+            <h2 className="text-2xl font-semibold mb-1">
+              Why 2025-26 Can Be the Year for Notre Dame and Micah Shrewsberry
+            </h2>
+            <p className="text-sm text-gray-500 mb-2">
+              Brian Papiernik • June 2025
+            </p>
+            <p className="text-gray-700">
+              With a deeper rotation, five-star freshman Jalen Haralson, and high-IQ transfer Carson Towt,
+              Notre Dame has the pieces to elevate its methodical attack into a more efficient and versatile
+              offense in Year 2 under Micah Shrewsberry.
+            </p>
+          </a>
+        </Link>
+      </div>
+      
     </div>
   );
 }
