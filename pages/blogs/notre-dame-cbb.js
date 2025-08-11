@@ -52,10 +52,12 @@ export default function NotreDamePreview() {
       <div
         className="mt-4 mb-4"
         dangerouslySetInnerHTML={{
-            __html: `<blockquote class="twitter-tweet"><p lang="en" dir="ltr"></p>&mdash; Brian Papiernik (@BigPapi355) <a href="https://twitter.com/BigPapi355/status/1893378199171551624">March 7, 2025</a></blockquote>`,
+          __html: `<blockquote class="twitter-tweet">
+            <a href="https://twitter.com/BigPapi355/status/1893378199171551624"></a>
+          </blockquote>`,
         }}
-        />
-        <Script src="https://platform.twitter.com/widgets.js" strategy="lazyOnload" />
+      />
+      <Script src="https://platform.twitter.com/widgets.js" strategy="lazyOnload" onLoad={() => window.twttr?.widgets?.load()} />
 
       <p className="mb-4">
         <strong>Kebba Njie:</strong>Kebba Njie served as Notre Dame&apos;s primary interior presence during the 2024–25 season, anchoring the frontcourt with efficient finishing and quietly stabilizing the defense. The 6&apos;10” junior posted a 58.2% effective field goal percentage and a 60.9% true shooting mark, converting 70.0% of his 2-point attempts. Offensively, Njie was a low-usage play-finisher (15.4% usage) who thrived on dump-offs, rolls, and second-chance points (11.2% OReb%). While not a playmaker (3.6% assist rate), he helped raise Notre Dame&apos;s offensive efficiency to 110.7 points per 100 possessions with him on the floor, compared to just 104.6 when he sat. His screen-setting and rim gravity complemented Markus Burton&apos;s slashing and created cleaner finishing opportunities in the halfcourt. Njie also drew fouls at a solid clip (44.5 FTR) and shot 70.2% from the line.
