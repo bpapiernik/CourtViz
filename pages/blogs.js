@@ -21,7 +21,7 @@ export default function Blogs() {
             <p className="text-gray-700">
               With a deeper rotation, five-star freshman Jalen Haralson, and high-IQ transfer Carson Towt,
               Notre Dame has the pieces to elevate its methodical attack into a more efficient and versatile
-              offense in Year 2 under Micah Shrewsberry.
+              offense in Year 3 under Micah Shrewsberry.
             </p>
           </a>
         </Link>
