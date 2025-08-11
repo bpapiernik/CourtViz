@@ -8,6 +8,25 @@ export default function Blogs() {
         Stay tuned for breakdowns and insights. Here’s the latest post:
       </p>
 
+      {/* Notre Dame CBB Preview */}
+      <div className="border p-4 rounded-lg hover:shadow transition">
+        <Link href="/blogs/notre-dame-cbb" passHref>
+          <a className="block">
+            <h2 className="text-2xl font-semibold mb-1">
+              Why 2025-26 Can Be the Year for Notre Dame and Micah Shrewsberry
+            </h2>
+            <p className="text-sm text-gray-500 mb-2">
+              Brian Papiernik • August 11, 2025
+            </p>
+            <p className="text-gray-700">
+              With a deeper rotation, five-star freshman Jalen Haralson, and high-IQ transfer Carson Towt,
+              Notre Dame has the pieces to elevate its methodical attack into a more efficient and versatile
+              offense in Year 2 under Micah Shrewsberry.
+            </p>
+          </a>
+        </Link>
+      </div>
+
       {/* Patrick Williams Blog Post */}
       <div className="border p-4 rounded-lg hover:shadow transition mb-4">
         <Link href="/blogs/patrick-williams" passHref>
@@ -75,24 +94,6 @@ export default function Blogs() {
             <p className="text-gray-700">
               How Georgia Tech transfer Naithan George can unlock Syracuse’s offense with his poise,
               vision, and ability to organize a talented but previously disjointed roster.
-            </p>
-          </a>
-        </Link>
-      </div>
-      {/* Notre Dame CBB Preview */}
-      <div className="border p-4 rounded-lg hover:shadow transition">
-        <Link href="/blogs/notre-dame-cbb" passHref>
-          <a className="block">
-            <h2 className="text-2xl font-semibold mb-1">
-              Why 2025-26 Can Be the Year for Notre Dame and Micah Shrewsberry
-            </h2>
-            <p className="text-sm text-gray-500 mb-2">
-              Brian Papiernik • June 2025
-            </p>
-            <p className="text-gray-700">
-              With a deeper rotation, five-star freshman Jalen Haralson, and high-IQ transfer Carson Towt,
-              Notre Dame has the pieces to elevate its methodical attack into a more efficient and versatile
-              offense in Year 2 under Micah Shrewsberry.
             </p>
           </a>
         </Link>
