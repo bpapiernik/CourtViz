@@ -46,7 +46,7 @@ export default function SimulatorLive() {
       // table is small (~48 rows) so one pull is fine
       const { data, error } = await supabase
         .from("historic_odds")
-        .select("Lines,fav_win_per");
+        .select("Line ,fav_win_per");
 
       if (error) {
         console.error("Error fetching historic odds:", error);
