@@ -2,6 +2,22 @@
 import { useEffect, useMemo, useState } from "react";
 import { supabase } from "../lib/supabaseClient";
 
+// ---------- Central Time (America/Chicago) helpers ----------
+function toISODateCentral(d = new Date()) {
+  // returns YYYY-MM-DD in America/Chicago (no UTC rollover issues)
+  const parts = new Intl.DateTimeFormat("en-CA", {
+    timeZone: "America/Chicago",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  }).formatToParts(d);
+
+  const y = parts.find((p) => p.type === "year")?.value;
+  const m = parts.find((p) => p.type === "month")?.value;
+  const day = parts.find((p) => p.type === "day")?.value;
+  return `${y}-${m}-${day}`;
+}
+
 export default function DailyMatchupViz() {
   // -----------------------------
   // Simulator (Live) state
@@ -12,20 +28,31 @@ export default function DailyMatchupViz() {
   const [result, setResult] = useState(null);
   const [loadingSim, setLoadingSim] = useState(false);
 
-  // ✅ bring back historic odds
+  // Expected spread (client-side using historic_odds)
   const [historicOdds, setHistoricOdds] = useState([]);
 
   // -----------------------------
   // Daily table state
   // -----------------------------
-  const todayISO = new Date().toISOString().slice(0, 10);
-  const [dateFrom, setDateFrom] = useState(todayISO);
-  const [dateTo, setDateTo] = useState(todayISO);
+  const todayISOCT = useMemo(() => toISODateCentral(new Date()), []);
+  const [dateFrom, setDateFrom] = useState(todayISOCT);
+  const [dateTo, setDateTo] = useState(todayISOCT);
+
   const [loadingTable, setLoadingTable] = useState(false);
   const [tableRows, setTableRows] = useState([]);
 
   // today | historic | both
   const [sourceFilter, setSourceFilter] = useState("both");
+
+  // Column filters (simple + useful)
+  const [homeFilter, setHomeFilter] = useState("");
+  const [awayFilter, setAwayFilter] = useState("");
+  const [officialPlayFilter, setOfficialPlayFilter] = useState("all"); // all | YES | NO
+  const [modelCorrectFilter, setModelCorrectFilter] = useState("all"); // all | 1 | 0
+  const [globalSearch, setGlobalSearch] = useState("");
+
+  // Official Play record (season-to-date)
+  const [officialRecord, setOfficialRecord] = useState({ wins: 0, losses: 0, pushes: 0 });
 
   // -----------------------------
   // Helpers
@@ -35,6 +62,14 @@ export default function DailyMatchupViz() {
 
   const num1 = (x) => (x == null ? "" : Number(x).toFixed(1));
   const num2 = (x) => (x == null ? "" : Number(x).toFixed(2));
+
+  const normalizeYesNo = (v) => {
+    if (v == null) return "";
+    const s = String(v).trim().toUpperCase();
+    if (s === "Y") return "YES";
+    if (s === "N") return "NO";
+    return s;
+  };
 
   // -----------------------------
   // Fetch teams + historic odds
@@ -63,18 +98,16 @@ export default function DailyMatchupViz() {
       }
 
       const uniqueTeams = Array.from(new Set(allRows.map((d) => d.TEAM))).sort();
-
       setTeams(uniqueTeams);
       setTeam1(uniqueTeams[0] || "");
       setTeam2(uniqueTeams[1] || uniqueTeams[0] || "");
     }
 
-    // ✅ bring back
     async function fetchHistoricOdds() {
       // table is small (~48 rows) so one pull is fine
       const { data, error } = await supabase
         .from("historic_odds")
-        .select("Line,fav_win_per"); // removed extra space
+        .select("Line,fav_win_per");
 
       if (error) {
         console.error("Error fetching historic odds:", error);
@@ -101,7 +134,7 @@ export default function DailyMatchupViz() {
       const url = new URL("https://march-madness-api.fly.dev/simulate_live");
       url.searchParams.append("team1", team1);
       url.searchParams.append("team2", team2);
-      url.searchParams.append("year", "2026");
+      url.searchParams.append("year", "2026"); // optional but explicit
       url.searchParams.append("num_simulations", "10000");
 
       const res = await fetch(url.toString());
@@ -115,9 +148,9 @@ export default function DailyMatchupViz() {
   };
 
   // -----------------------------
-  // ✅ bring back: expected spread from historic_odds
+  // Expected spread text (client-side, back to your preferred approach)
   // -----------------------------
-  const getExpectedSpreadText = () => {
+  const expectedSpreadText = useMemo(() => {
     if (!result || result.error) return null;
     if (!historicOdds || historicOdds.length === 0) return null;
 
@@ -144,14 +177,10 @@ export default function DailyMatchupViz() {
 
     // Line is negative for favorite; remove minus by abs()
     const line = Math.abs(Number(best.Line));
-
-    // Optional: format line nicely (no trailing .0)
     const lineText = Number.isInteger(line) ? `${line}` : `${line.toFixed(1)}`;
 
     return `${favoriteTeam} is expected to win on a neutral court by ${lineText} points.`;
-  };
-
-  const expectedSpreadText = getExpectedSpreadText();
+  }, [result, historicOdds]);
 
   // -----------------------------
   // Fetch table rows (today_games + historic_games)
@@ -163,24 +192,24 @@ export default function DailyMatchupViz() {
       // today_games
       const { data: todayData, error: todayErr } = await supabase
         .from("today_games")
-        .select(`
+        .select(
+          `
           date,home,away,
           home_win_prob,away_win_prob,
           vegas_line,vegas_ou,
-          suggested_odds,spread_diff,official_play,
-          percentage_to_match, suggested_spread_raw, suggested_spread_adj
-        `)
+          suggested_odds,spread_diff,official_play
+        `
+        )
         .gte("date", dateFrom)
         .lte("date", dateTo);
 
-      if (todayErr) {
-        console.error("today_games error:", todayErr);
-      }
+      if (todayErr) console.error("today_games error:", todayErr);
 
       // historic_games
       const { data: histData, error: histErr } = await supabase
         .from("historic_games")
-        .select(`
+        .select(
+          `
           date,home,away,
           home_win_prob,away_win_prob,
           vegas_line,vegas_ou,
@@ -188,13 +217,12 @@ export default function DailyMatchupViz() {
           score,home_margin_actual,
           model_pick,model_correct,
           official_pick,official_win,official_push
-        `)
+        `
+        )
         .gte("date", dateFrom)
         .lte("date", dateTo);
 
-      if (histErr) {
-        console.error("historic_games error:", histErr);
-      }
+      if (histErr) console.error("historic_games error:", histErr);
 
       const t = (todayData || []).map((r) => ({ ...r, source: "today_games" }));
       const h = (histData || []).map((r) => ({ ...r, source: "historic_games" }));
@@ -223,17 +251,104 @@ export default function DailyMatchupViz() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [dateFrom, dateTo]);
 
-  // -----------------------------
-  // Filtered rows (dropdown)
-  // -----------------------------
-  const filteredRows = useMemo(() => {
-    if (sourceFilter === "today") return tableRows.filter((r) => r.source === "today_games");
-    if (sourceFilter === "historic") return tableRows.filter((r) => r.source === "historic_games");
-    return tableRows;
-  }, [tableRows, sourceFilter]);
+  // If user toggles “Today Games”, auto snap date range to *today in CT*
+  useEffect(() => {
+    if (sourceFilter === "today") {
+      setDateFrom(todayISOCT);
+      setDateTo(todayISOCT);
+    }
+  }, [sourceFilter, todayISOCT]);
 
   // -----------------------------
-  // Row styling (historic model_correct)
+  // Official Play record (season-to-date) from historic_games
+  // -----------------------------
+  useEffect(() => {
+    async function loadOfficialRecord() {
+      // Season start guess for 2025-26 (adjust if you want)
+      const seasonStart = "2025-11-01";
+      const seasonEnd = todayISOCT;
+
+      const { data, error } = await supabase
+        .from("historic_games")
+        .select("official_play,official_win,official_push,date")
+        .gte("date", seasonStart)
+        .lte("date", seasonEnd);
+
+      if (error) {
+        console.error("official record fetch error:", error);
+        return;
+      }
+
+      const rows = data || [];
+      const plays = rows.filter((r) => normalizeYesNo(r.official_play) === "YES");
+
+      const wins = plays.reduce((acc, r) => acc + (Number(r.official_win) === 1 ? 1 : 0), 0);
+      const pushes = plays.reduce((acc, r) => acc + (Number(r.official_push) === 1 ? 1 : 0), 0);
+      const losses = Math.max(0, plays.length - wins - pushes);
+
+      setOfficialRecord({ wins, losses, pushes });
+    }
+
+    loadOfficialRecord();
+  }, [todayISOCT]);
+
+  // -----------------------------
+  // Filtered rows (dropdown + column filters)
+  // -----------------------------
+  const filteredRows = useMemo(() => {
+    let rows = tableRows;
+
+    // source
+    if (sourceFilter === "today") rows = rows.filter((r) => r.source === "today_games");
+    if (sourceFilter === "historic") rows = rows.filter((r) => r.source === "historic_games");
+
+    // column filters
+    const hf = homeFilter.trim().toLowerCase();
+    const af = awayFilter.trim().toLowerCase();
+    const gs = globalSearch.trim().toLowerCase();
+
+    if (hf) rows = rows.filter((r) => String(r.home || "").toLowerCase().includes(hf));
+    if (af) rows = rows.filter((r) => String(r.away || "").toLowerCase().includes(af));
+
+    if (officialPlayFilter !== "all") {
+      rows = rows.filter((r) => normalizeYesNo(r.official_play) === officialPlayFilter);
+    }
+
+    if (modelCorrectFilter !== "all") {
+      rows = rows.filter((r) => String(r.model_correct) === modelCorrectFilter);
+    }
+
+    if (gs) {
+      rows = rows.filter((r) => {
+        const blob = [
+          r.date,
+          r.home,
+          r.away,
+          r.model_pick,
+          r.official_pick,
+          r.official_play,
+          r.source,
+        ]
+          .map((x) => String(x ?? ""))
+          .join(" ")
+          .toLowerCase();
+        return blob.includes(gs);
+      });
+    }
+
+    return rows;
+  }, [
+    tableRows,
+    sourceFilter,
+    homeFilter,
+    awayFilter,
+    officialPlayFilter,
+    modelCorrectFilter,
+    globalSearch,
+  ]);
+
+  // -----------------------------
+  // Row styling (green/red for historic correctness)
   // -----------------------------
   const rowClass = (g) => {
     if (g.source !== "historic_games") return "odd:bg-white even:bg-gray-50";
@@ -243,7 +358,7 @@ export default function DailyMatchupViz() {
   };
 
   return (
-    <div className="p-8 max-w-5xl mx-auto bg-cream min-h-screen">
+    <div className="p-8 max-w-7xl mx-auto bg-cream min-h-screen">
       {/* -----------------------------
           SIMULATOR
       ----------------------------- */}
@@ -307,7 +422,7 @@ export default function DailyMatchupViz() {
             </span>
           </p>
 
-          {/* ✅ Expected spread line (historic_odds mapping) */}
+          {/* Expected spread line (client-side, using historic_odds) */}
           {expectedSpreadText && (
             <p className="text-gray-800 font-semibold">{expectedSpreadText}</p>
           )}
@@ -323,9 +438,26 @@ export default function DailyMatchupViz() {
       {/* -----------------------------
           DAILY TABLE
       ----------------------------- */}
-      <h2 className="text-2xl font-bold mb-4 text-gray-800">Daily Matchups</h2>
+      <div className="flex items-baseline justify-between gap-4 flex-wrap">
+        <h2 className="text-2xl font-bold mb-2 text-gray-800">Daily Matchups</h2>
+      </div>
 
-      <div className="flex flex-col md:flex-row gap-4 items-start md:items-end mb-4">
+      {/* Official Play explainer + record */}
+      <div className="mb-4">
+        <div className="text-gray-800 font-semibold">
+          2025-26 Official Play Record:{" "}
+          <span className="text-green-700">{officialRecord.wins}W</span> -{" "}
+          <span className="text-red-700">{officialRecord.losses}L</span> -{" "}
+          <span className="text-gray-700">{officialRecord.pushes}P</span>
+        </div>
+        <div className="text-sm text-gray-600 mt-1">
+          <span className="font-semibold">Official Play</span> = the model’s flagged bet for that game
+          (tracked in <span className="font-mono">historic_games</span> with win/loss/push outcomes).
+        </div>
+      </div>
+
+      {/* Controls row */}
+      <div className="flex flex-col lg:flex-row gap-4 items-start lg:items-end mb-4">
         <div>
           <label className="block font-medium mb-1 text-gray-700">From</label>
           <input
@@ -359,16 +491,89 @@ export default function DailyMatchupViz() {
           </select>
         </div>
 
-        <button
-          onClick={loadGames}
-          className="bg-gray-800 text-white font-semibold px-5 py-2 rounded shadow hover:bg-gray-900 transition"
-        >
-          {loadingTable ? "Loading..." : "Refresh"}
-        </button>
+        <div className="flex gap-2">
+          <button
+            onClick={() => {
+              setDateFrom(todayISOCT);
+              setDateTo(todayISOCT);
+            }}
+            className="bg-white border border-gray-300 text-gray-800 font-semibold px-4 py-2 rounded shadow hover:bg-gray-50 transition"
+            title="Set date range to today (Central Time)"
+          >
+            Today (CT)
+          </button>
+
+          <button
+            onClick={loadGames}
+            className="bg-gray-800 text-white font-semibold px-5 py-2 rounded shadow hover:bg-gray-900 transition"
+          >
+            {loadingTable ? "Loading..." : "Refresh"}
+          </button>
+        </div>
       </div>
 
+      {/* Filters row */}
+      <div className="flex flex-col xl:flex-row gap-3 items-start xl:items-end mb-4">
+        <div>
+          <label className="block text-sm font-medium mb-1 text-gray-700">Home contains</label>
+          <input
+            value={homeFilter}
+            onChange={(e) => setHomeFilter(e.target.value)}
+            className="bg-white border border-gray-300 px-3 py-2 rounded shadow-sm w-64"
+            placeholder="e.g. Notre Dame"
+          />
+        </div>
+
+        <div>
+          <label className="block text-sm font-medium mb-1 text-gray-700">Away contains</label>
+          <input
+            value={awayFilter}
+            onChange={(e) => setAwayFilter(e.target.value)}
+            className="bg-white border border-gray-300 px-3 py-2 rounded shadow-sm w-64"
+            placeholder="e.g. Duke"
+          />
+        </div>
+
+        <div>
+          <label className="block text-sm font-medium mb-1 text-gray-700">Official Play</label>
+          <select
+            value={officialPlayFilter}
+            onChange={(e) => setOfficialPlayFilter(e.target.value)}
+            className="bg-white border border-gray-300 px-3 py-2 rounded shadow-sm w-40"
+          >
+            <option value="all">All</option>
+            <option value="YES">YES</option>
+            <option value="NO">NO</option>
+          </select>
+        </div>
+
+        <div>
+          <label className="block text-sm font-medium mb-1 text-gray-700">Model Correct</label>
+          <select
+            value={modelCorrectFilter}
+            onChange={(e) => setModelCorrectFilter(e.target.value)}
+            className="bg-white border border-gray-300 px-3 py-2 rounded shadow-sm w-40"
+          >
+            <option value="all">All</option>
+            <option value="1">1</option>
+            <option value="0">0</option>
+          </select>
+        </div>
+
+        <div className="flex-1 min-w-[260px]">
+          <label className="block text-sm font-medium mb-1 text-gray-700">Search</label>
+          <input
+            value={globalSearch}
+            onChange={(e) => setGlobalSearch(e.target.value)}
+            className="bg-white border border-gray-300 px-3 py-2 rounded shadow-sm w-full"
+            placeholder="Search date / teams / picks / source…"
+          />
+        </div>
+      </div>
+
+      {/* Wider table container */}
       <div className="overflow-x-auto bg-white border rounded shadow">
-        <table className="min-w-full text-sm">
+        <table className="min-w-[1400px] w-full text-sm">
           <thead className="bg-gray-100">
             <tr>
               <th className="text-left px-3 py-2 border-b">Date</th>
@@ -432,7 +637,7 @@ export default function DailyMatchupViz() {
 
                     <td className="px-3 py-2 border-b text-right">{num2(g.suggested_odds)}</td>
                     <td className="px-3 py-2 border-b text-right">{num1(g.spread_diff)}</td>
-                    <td className="px-3 py-2 border-b">{g.official_play || ""}</td>
+                    <td className="px-3 py-2 border-b">{normalizeYesNo(g.official_play)}</td>
 
                     <td className="px-3 py-2 border-b">{isHistoric ? g.score || "" : ""}</td>
                     <td className="px-3 py-2 border-b text-right">
@@ -463,6 +668,7 @@ export default function DailyMatchupViz() {
         </table>
       </div>
 
+      {/* legend */}
       <div className="mt-3 text-sm text-gray-600">
         <span className="inline-block px-2 py-1 bg-green-50 border rounded mr-2">
           Historic: Model correct
