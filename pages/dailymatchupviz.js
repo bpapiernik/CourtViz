@@ -43,6 +43,13 @@ export default function DailyMatchupViz() {
     winPct: null,
   });
 
+  const [yesterdayRecord, setYesterdayRecord] = useState({
+    wins: 0,
+    losses: 0,
+    pushes: 0,
+    winPct: null,
+  });
+
   // ----------------------------
   // Helpers: Central Time "today"
   // ----------------------------
@@ -386,6 +393,65 @@ export default function DailyMatchupViz() {
   }, []);
 
   // ----------------------------
+// Yesterday Official Play record (CT)
+// ----------------------------
+  useEffect(() => {
+    async function fetchYesterdayRecord() {
+      const todayCT = getTodayCTIso();
+
+      const dt = new Date(`${todayCT}T00:00:00`);
+      dt.setDate(dt.getDate() - 1);
+
+      const yIso = `${dt.getFullYear()}-${String(dt.getMonth() + 1).padStart(2, "0")}-${String(
+        dt.getDate()
+      ).padStart(2, "0")}`;
+
+      const { data, error } = await supabase
+        .from("historic_games")
+        .select("official_win,official_push,official_pick,official_play,date")
+        .eq("date", yIso);
+
+      if (error) {
+        console.error("Error fetching yesterday record:", error);
+        return;
+      }
+
+      const rows = data || [];
+
+      const isOfficialPlay = (r) => {
+        const op = String(r.official_play || "").toUpperCase();
+        const ok = String(r.official_pick || "").toUpperCase();
+        if (op && op !== "NO") return true;
+        if (ok && ok !== "NO_PLAY") return true;
+        return false;
+      };
+
+      let wins = 0;
+      let losses = 0;
+      let pushes = 0;
+
+      for (const r of rows) {
+        if (!isOfficialPlay(r)) continue;
+
+        const w = Number(r.official_win);
+        const p = Number(r.official_push);
+
+        if (p === 1) pushes += 1;
+        else if (w === 1) wins += 1;
+        else if (w === 0) losses += 1;
+      }
+
+      const denom = wins + losses;
+      const winPct = denom > 0 ? wins / denom : null;
+
+      setYesterdayRecord({ wins, losses, pushes, winPct });
+    }
+
+    fetchYesterdayRecord();
+  }, []);
+
+
+  // ----------------------------
   // Filters + sorting (client-side)
   // ----------------------------
   const filteredMatchups = useMemo(() => {
@@ -583,6 +649,20 @@ export default function DailyMatchupViz() {
           )}
         </div>
 
+        <div className="mt-1 text-sm text-gray-700">
+          Yesterday:{" "}
+          <span className="text-green-700">{yesterdayRecord.wins}W</span> -{" "}
+          <span className="text-red-700">{yesterdayRecord.losses}L</span> -{" "}
+          <span className="text-gray-600">{yesterdayRecord.pushes}P</span>
+          {yesterdayRecord.winPct !== null && (
+            <span className="text-gray-600">
+              {" "}
+              ({(yesterdayRecord.winPct * 100).toFixed(1)}%)
+            </span>
+          )}
+        </div>
+      
+
         <div className="text-sm text-gray-700 mt-1">
           <strong>Official Play</strong> = the model&apos;s flagged bet for a game where{" "}
           <code>abs(vegas_line)</code> ≤ 18 and <code>abs(spread_diff)</code> ≥ 4.
@@ -693,9 +773,9 @@ export default function DailyMatchupViz() {
       </div>
 
       {/* Table wrapper: wider + scroll */}
-      <div className="w-full overflow-x-auto border rounded bg-white shadow">
-        <table className="min-w-[1200px] w-full text-sm">
-          <thead className="bg-gray-100">
+      <div className="w-full overflow-x-auto border rounded bg-white dark:bg-gray-950 border-gray-200 dark:border-gray-800 shadow">
+        <table className="min-w-[1200px] w-full text-sm text-gray-900 dark:text-gray-100">
+          <thead className="bg-gray-100 dark:bg-gray-900">
             <tr className="text-left">
               {[
                 ["date", "Date"],
@@ -718,12 +798,12 @@ export default function DailyMatchupViz() {
                 <th
                   key={key}
                   onClick={() => toggleSort(key)}
-                  className="px-3 py-2 cursor-pointer select-none whitespace-nowrap border-b border-gray-200"
+                  className="px-3 py-2 cursor-pointer select-none whitespace-nowrap border-b border-gray-200 dark:border-gray-800"
                   title="Click to sort"
                 >
                   {label}{" "}
                   {sortKey === key && (
-                    <span className="text-gray-600">{sortDir === "asc" ? "▲" : "▼"}</span>
+                    <span className="text-gray-600 dark:text-gray-300">{sortDir === "asc" ? "▲" : "▼"}</span>
                   )}
                 </th>
               ))}
