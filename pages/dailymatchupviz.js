@@ -584,9 +584,10 @@ export default function DailyMatchupViz() {
         </div>
 
         <div className="text-sm text-gray-700 mt-1">
-          <strong>Official Play</strong> = the model&apos;s flagged bet a game with an absolute value "vegas_line" of <= 18 and an absolute value "spread_diff" of >= 4+ points.
-        </div>
+          <strong>Official Play</strong> = the model&apos;s flagged bet for a game where{" "}
+          <code>abs(vegas_line)</code> ≤ 18 and <code>abs(spread_diff)</code> ≥ 4.
       </div>
+    </div>
 
       {/* Controls */}
       <div className="mt-4 mb-4 flex flex-wrap items-end gap-4">
