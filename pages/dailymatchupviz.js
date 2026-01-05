@@ -112,7 +112,7 @@ export default function SimulatorLive() {
     if (!best) return null;
 
     // Lines is negative for favorite; remove minus by abs()
-    const line = Math.abs(Number(best.Lines));
+    const line = Math.abs(Number(best.Line));
 
     // Optional: format line nicely (no trailing .0)
     const lineText = Number.isInteger(line) ? `${line}` : `${line.toFixed(1)}`;
