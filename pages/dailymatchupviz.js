@@ -32,8 +32,8 @@ export default function DailyMatchupViz() {
   const [matchups, setMatchups] = useState([]);
 
   // Sorting
-  const [sortKey, setSortKey] = useState("date"); // default
-  const [sortDir, setSortDir] = useState("asc"); // asc | desc
+  const [sortKey, setSortKey] = useState("official_play"); // default
+  const [sortDir, setSortDir] = useState("desc"); // asc | desc
 
   // Official play record (historic_games)
   const [officialRecord, setOfficialRecord] = useState({
@@ -786,7 +786,7 @@ export default function DailyMatchupViz() {
 
       {/* Table wrapper: wider + scroll */}
       <div className="w-full overflow-x-auto border rounded bg-white dark:bg-gray-950 border-gray-200 dark:border-gray-800 shadow">
-        <table className="min-w-[1800px] w-full text-sm text-gray-900 dark:text-gray-100">
+        <table className="min-w-[1600px] w-full text-sm text-gray-900 dark:text-gray-100">
           <thead className="bg-gray-100 dark:bg-gray-900">
             <tr className="text-left">
               {[
