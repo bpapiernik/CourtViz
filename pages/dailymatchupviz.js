@@ -882,12 +882,12 @@ export default function DailyMatchupViz() {
                 <td className="px-3 py-2 whitespace-nowrap">{fmtLine(r.spread_diff)}</td>
 
                 <td className="px-3 py-2 whitespace-nowrap">{r.official_play ?? ""}</td>
+                <td className="px-3 py-2 whitespace-nowrap font-semibold text-blue-700">{getOfficialPickDisplay(r)}</td>
                 <td className="px-3 py-2 whitespace-nowrap">{r.score ?? ""}</td>
                 <td className="px-3 py-2 whitespace-nowrap">{r.home_margin_actual ?? ""}</td>
                 <td className="px-3 py-2 whitespace-nowrap">{r.model_pick ?? ""}</td>
                 <td className="px-3 py-2 whitespace-nowrap">{r.model_correct ?? ""}</td>
                 <td className="px-3 py-2 whitespace-nowrap">{r.official_pick ?? ""}</td>
-                <td className="px-3 py-2 whitespace-nowrap font-semibold text-blue-700">{getOfficialPickDisplay(r)}</td>
                 <td className="px-3 py-2 whitespace-nowrap">{r.source}</td>
               </tr>
             ))}
