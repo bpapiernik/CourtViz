@@ -77,54 +77,93 @@ export default function DailyMatchupViz() {
   };
 
   // ----------------------------
-  // Fetch Teams + Historic Odds once
-  // ----------------------------
-  useEffect(() => {
-    async function fetchTeams() {
-      const batchSize = 1000;
-      let start = 0;
-      let allRows = [];
-      let finished = false;
+// Build Official Pick display text
+// ----------------------------
+  const getOfficialPickDisplay = (r) => {
+    if (String(r.official_play).toUpperCase() !== "YES") return "";
 
-      while (!finished) {
+    const vegas = Number(r.vegas_line);
+    const diff = Number(r.spread_diff);
+
+    if (!Number.isFinite(vegas) || !Number.isFinite(diff)) return "";
+
+    const homeFavored = vegas < 0;
+    const absLine = Math.abs(vegas);
+    const lineText = Number.isInteger(absLine) ? absLine : absLine.toFixed(1);
+
+    // HOME favored
+    if (homeFavored) {
+      // take HOME spread
+      if (diff < 0) {
+        return `${r.home} -${lineText}`;
+      }
+      // take AWAY spread
+      return `${r.away} +${lineText}`;
+    }
+
+    // AWAY favored
+    // vegas_line > 0 means home is underdog
+    if (!homeFavored) {
+      // take AWAY spread
+      if (diff > 0) {
+        return `${r.away} -${lineText}`;
+      }
+      // take HOME spread
+      return `${r.home} +${lineText}`;
+    }
+
+    return "";
+  };
+
+    // ----------------------------
+    // Fetch Teams + Historic Odds once
+    // ----------------------------
+    useEffect(() => {
+      async function fetchTeams() {
+        const batchSize = 1000;
+        let start = 0;
+        let allRows = [];
+        let finished = false;
+
+        while (!finished) {
+          const { data, error } = await supabase
+            .from("march_madness_sq_players")
+            .select("TEAM")
+            .range(start, start + batchSize - 1);
+
+          if (error) {
+            console.error("Error fetching teams:", error);
+            return;
+          }
+
+          allRows = allRows.concat(data || []);
+          if (!data || data.length < batchSize) finished = true;
+          start += batchSize;
+        }
+
+        const uniqueTeams = Array.from(new Set(allRows.map((d) => d.TEAM))).sort();
+        setTeams(uniqueTeams);
+        setTeam1(uniqueTeams[0] || "");
+        setTeam2(uniqueTeams[1] || uniqueTeams[0] || "");
+      }
+
+      async function fetchHistoricOdds() {
+        // table is small (~48 rows) so one pull is fine
         const { data, error } = await supabase
-          .from("march_madness_sq_players")
-          .select("TEAM")
-          .range(start, start + batchSize - 1);
+          .from("historic_odds")
+          .select("Line,fav_win_per");
 
         if (error) {
-          console.error("Error fetching teams:", error);
+          console.error("Error fetching historic odds:", error);
           return;
         }
 
-        allRows = allRows.concat(data || []);
-        if (!data || data.length < batchSize) finished = true;
-        start += batchSize;
+        setHistoricOdds(data || []);
       }
 
-      const uniqueTeams = Array.from(new Set(allRows.map((d) => d.TEAM))).sort();
-      setTeams(uniqueTeams);
-      setTeam1(uniqueTeams[0] || "");
-      setTeam2(uniqueTeams[1] || uniqueTeams[0] || "");
-    }
-
-    async function fetchHistoricOdds() {
-      // table is small (~48 rows) so one pull is fine
-      const { data, error } = await supabase
-        .from("historic_odds")
-        .select("Line,fav_win_per");
-
-      if (error) {
-        console.error("Error fetching historic odds:", error);
-        return;
-      }
-
-      setHistoricOdds(data || []);
-    }
-
-    fetchTeams();
-    fetchHistoricOdds();
-  }, []);
+      fetchTeams();
+      fetchHistoricOdds();
+    }, []);
 
   // ----------------------------
   // Default date range on load (CT)
@@ -805,6 +844,7 @@ export default function DailyMatchupViz() {
                 ["model_pick", "Model Pick"],
                 ["model_correct", "Model ✓"],
                 ["official_pick", "Official Pick"],
+                ["official_side", "Official Side"],
                 ["source", "Source"],
               ].map(([key, label]) => (
                 <th
@@ -847,6 +887,7 @@ export default function DailyMatchupViz() {
                 <td className="px-3 py-2 whitespace-nowrap">{r.model_pick ?? ""}</td>
                 <td className="px-3 py-2 whitespace-nowrap">{r.model_correct ?? ""}</td>
                 <td className="px-3 py-2 whitespace-nowrap">{r.official_pick ?? ""}</td>
+                <td className="px-3 py-2 whitespace-nowrap font-semibold text-blue-700">{getOfficialPickDisplay(r)}</td>
                 <td className="px-3 py-2 whitespace-nowrap">{r.source}</td>
               </tr>
             ))}
