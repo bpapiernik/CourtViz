@@ -9,6 +9,9 @@ export default function SimulatorLive() {
   const [result, setResult] = useState(null);
   const [loading, setLoading] = useState(false);
 
+  // NEW: historic odds lookup table
+  const [historicOdds, setHistoricOdds] = useState([]);
+
   useEffect(() => {
     async function fetchTeams() {
       const batchSize = 1000;
@@ -32,7 +35,6 @@ export default function SimulatorLive() {
         start += batchSize;
       }
 
-      // unique TEAM list
       const uniqueTeams = Array.from(new Set(allRows.map((d) => d.TEAM))).sort();
 
       setTeams(uniqueTeams);
@@ -40,7 +42,22 @@ export default function SimulatorLive() {
       setTeam2(uniqueTeams[1] || uniqueTeams[0] || "");
     }
 
+    async function fetchHistoricOdds() {
+      // table is small (~48 rows) so one pull is fine
+      const { data, error } = await supabase
+        .from("historic_odds")
+        .select("Lines,fav_win_per");
+
+      if (error) {
+        console.error("Error fetching historic odds:", error);
+        return;
+      }
+
+      setHistoricOdds(data || []);
+    }
+
     fetchTeams();
+    fetchHistoricOdds();
   }, []);
 
   const simulateMatchup = async () => {
@@ -53,7 +70,7 @@ export default function SimulatorLive() {
       const url = new URL("https://march-madness-api.fly.dev/simulate_live");
       url.searchParams.append("team1", team1);
       url.searchParams.append("team2", team2);
-      url.searchParams.append("year", "2026"); // optional, but explicit
+      url.searchParams.append("year", "2026");
       url.searchParams.append("num_simulations", "10000");
 
       const res = await fetch(url.toString());
@@ -67,6 +84,43 @@ export default function SimulatorLive() {
   };
 
   const formatPercentage = (decimal) => `${(decimal * 100).toFixed(2)}%`;
+
+  // NEW: helper to get expected spread from historic_odds based on favorite prob
+  const getExpectedSpreadText = () => {
+    if (!result || result.error) return null;
+    if (!historicOdds || historicOdds.length === 0) return null;
+
+    const t1p = Number(result.team1_win_prob);
+    const t2p = Number(result.team2_win_prob);
+
+    const favoriteTeam = t1p >= t2p ? result.team1 : result.team2;
+    const favProb = Math.max(t1p, t2p);
+
+    // find closest fav_win_per
+    let best = null;
+    let bestDiff = Infinity;
+
+    for (const row of historicOdds) {
+      const p = Number(row.fav_win_per);
+      const diff = Math.abs(p - favProb);
+      if (diff < bestDiff) {
+        bestDiff = diff;
+        best = row;
+      }
+    }
+
+    if (!best) return null;
+
+    // Lines is negative for favorite; remove minus by abs()
+    const line = Math.abs(Number(best.Lines));
+
+    // Optional: format line nicely (no trailing .0)
+    const lineText = Number.isInteger(line) ? `${line}` : `${line.toFixed(1)}`;
+
+    return `${favoriteTeam} is expected to win on a neutral court by ${lineText} points.`;
+  };
+
+  const expectedSpreadText = getExpectedSpreadText();
 
   return (
     <div className="p-8 max-w-xl mx-auto bg-cream min-h-screen">
@@ -123,12 +177,19 @@ export default function SimulatorLive() {
               {formatPercentage(result.team1_win_prob)}
             </span>
           </p>
-          <p>
+          <p className="mb-4">
             <strong>{result.team2}</strong> win probability:{" "}
             <span className="text-red-600 font-bold">
               {formatPercentage(result.team2_win_prob)}
             </span>
           </p>
+
+          {/* NEW: expected spread line */}
+          {expectedSpreadText && (
+            <p className="text-gray-800 font-semibold">
+              {expectedSpreadText}
+            </p>
+          )}
         </div>
       )}
 
