@@ -649,7 +649,7 @@ export default function DailyMatchupViz() {
           )}
         </div>
 
-        <div className="mt-1 text-sm text-gray-700">
+        <div className="mt-2 text-gray-800 font-semibold">
           Yesterday:{" "}
           <span className="text-green-700">{yesterdayRecord.wins}W</span> -{" "}
           <span className="text-red-700">{yesterdayRecord.losses}L</span> -{" "}
