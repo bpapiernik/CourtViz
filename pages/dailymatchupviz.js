@@ -839,12 +839,12 @@ export default function DailyMatchupViz() {
                 ["suggested_odds", "Suggested Odds"],
                 ["spread_diff", "Spread Diff"],
                 ["official_play", "Official Play"],
+                ["official_side", "Official Side"],
                 ["score", "Final"],
                 ["home_margin_actual", "Margin"],
                 ["model_pick", "Model Pick"],
                 ["model_correct", "Model ✓"],
                 ["official_pick", "Official Pick"],
-                ["official_side", "Official Side"],
                 ["source", "Source"],
               ].map(([key, label]) => (
                 <th
