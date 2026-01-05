@@ -650,12 +650,12 @@ export default function DailyMatchupViz() {
         </div>
 
         <div className="mt-2 text-gray-800 font-semibold">
-          Yesterday:{" "}
+          Yesterday Record:{" "}
           <span className="text-green-700">{yesterdayRecord.wins}W</span> -{" "}
           <span className="text-red-700">{yesterdayRecord.losses}L</span> -{" "}
           <span className="text-gray-600">{yesterdayRecord.pushes}P</span>
           {yesterdayRecord.winPct !== null && (
-            <span className="text-gray-600">
+            <span className="text-gray-700">
               {" "}
               ({(yesterdayRecord.winPct * 100).toFixed(1)}%)
             </span>
@@ -666,7 +666,19 @@ export default function DailyMatchupViz() {
         <div className="text-sm text-gray-700 mt-1">
           <strong>Official Play</strong> = the model&apos;s flagged bet for a game where{" "}
           <code>abs(vegas_line)</code> ≤ 18 and <code>abs(spread_diff)</code> ≥ 4.
-      </div>
+        </div>
+
+        <div className="text-sm text-gray-700 mt-1">
+          <strong>Home Win %</strong> and <strong>Away Win %</strong> represent each team’s
+          expected probability of winning on a <em>neutral court</em>.
+        </div>
+
+        <div className="text-sm text-gray-700 mt-1">
+          <strong>Suggested Odds</strong> adjust the neutral-court projection by applying a
+          standard <strong>3-point home-court advantage</strong> to the home team, producing
+          a spread that reflects a typical on-campus game environment.
+        </div>
+
     </div>
 
       {/* Controls */}
