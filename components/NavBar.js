@@ -9,10 +9,10 @@ export default function NavBar() {
         <Link href="/">Home</Link>
         <Link href="/player">Players</Link>
         <Link href="/finder">Player Finder</Link>
-        <Link href="/fieldviz">FieldViz</Link>
         <Link href="/blogs">Blogs</Link>
         <Link href="/portfolio">Brian&apos;s Portfolio</Link>
         <Link href="/simulator">CBB Simulator</Link>
+        <Link href="/dailymatchupviz">Daily MatchupViz</Link>
         <Link href="/heliocentric-leaderboard">Heliocentric Leaderbord</Link>
       </div>
 
