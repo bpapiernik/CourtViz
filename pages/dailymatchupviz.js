@@ -704,7 +704,7 @@ export default function DailyMatchupViz() {
 
         <div className="text-sm text-gray-700 mt-1">
           <strong>Official Play</strong> = the model&apos;s flagged bet for a game where{" "}
-          <code>abs(vegas_line)</code> ≤ 18 and <code>abs(spread_diff)</code> ≥ 4.
+          <code>abs(vegas_line)</code> ≤ 18 and <code>abs(spread_diff)</code> ≥ 5. *changed from ≥ 4 on 1/9/2026*
         </div>
 
         <div className="text-sm text-gray-700 mt-1">
