@@ -411,6 +411,8 @@ export default function DailyMatchupViz() {
       let losses = 0;
       let pushes = 0;
 
+      let ungraded = 0;
+
       for (const r of rows) {
         if (!isOfficialPlay(r)) continue;
 
@@ -419,12 +421,17 @@ export default function DailyMatchupViz() {
         const isLoss = r.official_win === 0 || r.official_win === "0";
 
         // skip ungraded rows (prevents fake losses)
-        if (!isPush && !isWin && !isLoss) continue;
+        if (!isPush && !isWin && !isLoss) {
+          ungraded += 1;
+          continue;
+        }
 
         if (isPush) pushes += 1;
         else if (isWin) wins += 1;
         else if (isLoss) losses += 1;
       }
+
+      console.log("official plays counted:", { wins, losses, pushes, ungraded });
 
       const denom = wins + losses;
       const winPct = denom > 0 ? wins / denom : null;
