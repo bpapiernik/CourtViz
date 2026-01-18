@@ -414,18 +414,23 @@ export default function DailyMatchupViz() {
       for (const r of rows) {
         if (!isOfficialPlay(r)) continue;
 
-        const w = Number(r.official_win);
-        const p = Number(r.official_push);
+        const isPush = r.official_push === 1 || r.official_push === "1";
+        const isWin  = r.official_win === 1 || r.official_win === "1";
+        const isLoss = r.official_win === 0 || r.official_win === "0";
 
-        if (p === 1) pushes += 1;
-        else if (w === 1) wins += 1;
-        else if (w === 0) losses += 1;
+        // skip ungraded rows (prevents fake losses)
+        if (!isPush && !isWin && !isLoss) continue;
+
+        if (isPush) pushes += 1;
+        else if (isWin) wins += 1;
+        else if (isLoss) losses += 1;
       }
 
       const denom = wins + losses;
       const winPct = denom > 0 ? wins / denom : null;
 
       setOfficialRecord({ wins, losses, pushes, winPct });
+
     }
 
     fetchOfficialRecord();
