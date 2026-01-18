@@ -379,78 +379,69 @@ export default function DailyMatchupViz() {
   // Official Play record (for 2025-26 season)
   // ----------------------------
   useEffect(() => {
-    async function fetchOfficialRecord() {
-      // season is 2025-26; you can tighten these bounds however you want
-      // Here: from Nov 1 2025 through today CT
-      const todayCT = getTodayCTIso();
-      const seasonStart = "2025-11-01";
+  async function fetchOfficialRecord() {
+    const todayCT = getTodayCTIso();
+    const seasonStart = "2025-11-01";
 
+    let allRows = [];
+    let from = 0;
+    const pageSize = 1000;
+
+    while (true) {
       const { data, error } = await supabase
         .from("historic_games")
         .select("official_win,official_push,official_pick,official_play,date")
         .gte("date", seasonStart)
-        .lte("date", todayCT);
+        .lte("date", todayCT)
+        .range(from, from + pageSize - 1);
 
       if (error) {
         console.error("Error fetching official record:", error);
         return;
       }
 
-      const rows = data || [];
+      allRows = allRows.concat(data || []);
 
-      // treat "official play" as anything not NO/NO_PLAY
-      const isOfficialPlay = (r) => {
-        const op = String(r.official_play || "").toUpperCase();
-        const ok = String(r.official_pick || "").toUpperCase();
-        if (op && op !== "NO") return true;
-        if (ok && ok !== "NO_PLAY") return true;
-        return false;
-      };
-
-      let wins = 0;
-      let losses = 0;
-      let pushes = 0;
-      let ungraded = 0;
-
-      for (const r of rows) {
-        if (!isOfficialPlay(r)) continue;
-
-        const isPush = r.official_push === 1 || r.official_push === "1";
-        const isWin  = r.official_win === 1 || r.official_win === "1";
-        const isZero = r.official_win === 0 || r.official_win === "0";
-
-        // Pushes FIRST (they live inside official_win = 0 in DB)
-        if (isPush) {
-          pushes += 1;
-          continue;
-        }
-
-        if (isWin) {
-          wins += 1;
-          continue;
-        }
-
-        // Losses = official_win = 0 BUT NOT push
-        if (isZero) {
-          losses += 1;
-          continue;
-        }
-
-        // Truly ungraded
-        ungraded += 1;
-      }
-
-      console.log("official plays counted:", { wins, losses, pushes, ungraded });
-
-      const denom = wins + losses;
-      const winPct = denom > 0 ? wins / denom : null;
-
-      setOfficialRecord({ wins, losses, pushes, winPct });
-
+      if (!data || data.length < pageSize) break;
+      from += pageSize;
     }
 
-    fetchOfficialRecord();
-  }, []);
+    console.log("historic_games rows fetched:", allRows.length);
+
+    const rows = allRows;
+
+    // treat "official play" as anything not NO/NO_PLAY
+    const isOfficialPlay = (r) => {
+      const op = String(r.official_play || "").toUpperCase();
+      const ok = String(r.official_pick || "").toUpperCase();
+      if (op && op !== "NO") return true;
+      if (ok && ok !== "NO_PLAY") return true;
+      return false;
+    };
+
+    let wins = 0;
+    let losses = 0;
+    let pushes = 0;
+
+    for (const r of rows) {
+      if (!isOfficialPlay(r)) continue;
+
+      const w = Number(r.official_win);
+      const p = Number(r.official_push);
+
+      if (p === 1) pushes += 1;
+      else if (w === 1) wins += 1;
+      else if (w === 0) losses += 1;
+    }
+
+    const denom = wins + losses;
+    const winPct = denom > 0 ? wins / denom : null;
+
+    setOfficialRecord({ wins, losses, pushes, winPct });
+  }
+
+  fetchOfficialRecord();
+}, []);
 
   // ----------------------------
 // Yesterday Official Play record (CT)
