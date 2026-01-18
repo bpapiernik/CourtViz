@@ -410,7 +410,6 @@ export default function DailyMatchupViz() {
       let wins = 0;
       let losses = 0;
       let pushes = 0;
-
       let ungraded = 0;
 
       for (const r of rows) {
@@ -418,17 +417,27 @@ export default function DailyMatchupViz() {
 
         const isPush = r.official_push === 1 || r.official_push === "1";
         const isWin  = r.official_win === 1 || r.official_win === "1";
-        const isLoss = r.official_win === 0 || r.official_win === "0";
+        const isZero = r.official_win === 0 || r.official_win === "0";
 
-        // skip ungraded rows (prevents fake losses)
-        if (!isPush && !isWin && !isLoss) {
-          ungraded += 1;
+        // Pushes FIRST (they live inside official_win = 0 in DB)
+        if (isPush) {
+          pushes += 1;
           continue;
         }
 
-        if (isPush) pushes += 1;
-        else if (isWin) wins += 1;
-        else if (isLoss) losses += 1;
+        if (isWin) {
+          wins += 1;
+          continue;
+        }
+
+        // Losses = official_win = 0 BUT NOT push
+        if (isZero) {
+          losses += 1;
+          continue;
+        }
+
+        // Truly ungraded
+        ungraded += 1;
       }
 
       console.log("official plays counted:", { wins, losses, pushes, ungraded });
