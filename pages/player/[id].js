@@ -239,43 +239,103 @@ const teamIdToName = {
 };
 
 
+const makeKey = (row, cols) => cols.map((c) => String(row?.[c] ?? "")).join("|");
+
+const mergePreferLive = (baseRows = [], liveRows = [], keyCols = []) => {
+  const map = new Map();
+  for (const r of baseRows) map.set(makeKey(r, keyCols), r);
+  for (const r of liveRows) map.set(makeKey(r, keyCols), r); // live overwrites
+  return Array.from(map.values());
+};
+
+const applyFilters = (q, filters = []) => {
+  for (const f of filters) {
+    if (f.op === "eq") q = q.eq(f.col, f.val);
+    else if (f.op === "in") q = q.in(f.col, f.val);
+    else if (f.op === "gte") q = q.gte(f.col, f.val);
+    else if (f.op === "lte") q = q.lte(f.col, f.val);
+  }
+  return q;
+};
+
+// returns merged array
+const fetchMergedRows = async ({
+  baseTable,
+  liveTable,
+  select = "*",
+  filters = [],
+  keyCols = [],
+}) => {
+  const qBase = applyFilters(supabase.from(baseTable).select(select), filters);
+  const qLive = applyFilters(supabase.from(liveTable).select(select), filters);
+
+  const [{ data: baseData, error: e1 }, { data: liveData, error: e2 }] =
+    await Promise.all([qBase, qLive]);
+
+  // if live table isn't present / errors, fall back to base
+  if (e2 && !e1) return baseData || [];
+  if (e1 && !e2) return liveData || [];
+  if (e1 && e2) return [];
+
+  return mergePreferLive(baseData || [], liveData || [], keyCols);
+};
+
+// returns merged single row (or null)
+const fetchSingleMerged = async (args) => {
+  const rows = await fetchMergedRows(args);
+  return rows?.[0] ?? null;
+};
+
+// --- component ---
 export default function PlayerPage() {
   const { id } = useRouter().query;
 
   const [playerInfo, setPlayerInfo] = useState(null);
   const [headshotUrl, setHeadshotUrl] = useState(null);
   const [seasons, setSeasons] = useState([]);
-  const [selectedSeason, setSelectedSeason] = useState('');
+  const [selectedSeason, setSelectedSeason] = useState("");
   const [ageOptions, setAgeOptions] = useState([]);
-  const [selectedAge, setSelectedAge] = useState('');
+  const [selectedAge, setSelectedAge] = useState("");
   const [experienceOptions, setExperienceOptions] = useState([]);
-  const [selectedExperience, setSelectedExperience] = useState('');
+  const [selectedExperience, setSelectedExperience] = useState("");
   const [positionSeasons, setPositionSeasons] = useState([]);
-  const [selectedPositionSeason, setSelectedPositionSeason] = useState('');
-  const [selectedGroup, setSelectedGroup] = useState('All');
-  const [selectedAgeGroup, setSelectedAgeGroup] = useState('All');
-  const [selectedExpGroup, setSelectedExpGroup] = useState('All');
-  const [selectedPosGroup, setSelectedPosGroup] = useState('All');
-  const [selectedSynergySeason, setSelectedSynergySeason] = useState('');
-  const [selectedTypeGroup, setSelectedTypeGroup] = useState('Offensive');
+  const [selectedPositionSeason, setSelectedPositionSeason] = useState("");
+  const [selectedGroup, setSelectedGroup] = useState("All");
+  const [selectedAgeGroup, setSelectedAgeGroup] = useState("All");
+  const [selectedExpGroup, setSelectedExpGroup] = useState("All");
+  const [selectedPosGroup, setSelectedPosGroup] = useState("All");
+  const [selectedSynergySeason, setSelectedSynergySeason] = useState("");
+  const [selectedTypeGroup, setSelectedTypeGroup] = useState("Offensive");
   const [teamOptions, setTeamOptions] = useState([]);
-  const [selectedTeam, setSelectedTeam] = useState('');
+  const [selectedTeam, setSelectedTeam] = useState("");
+
   const [synergyRows, setSynergyRows] = useState([]);
 
   const [percentiles, setPercentiles] = useState([]);
   const [agePercentiles, setAgePercentiles] = useState([]);
   const [expPercentiles, setExpPercentiles] = useState([]);
   const [posPercentiles, setPosPercentiles] = useState([]);
-  const [shotChartSeason, setShotChartSeason] = useState('');
+
+  const [shotChartSeason, setShotChartSeason] = useState("");
   const [shotChartBins, setShotChartBins] = useState([]);
 
-
+  // -------- player info (no live version needed unless you created one)
   useEffect(() => {
     if (!id) return;
 
     const fetchPlayerData = async () => {
-      const { data: player } = await supabase.from('players').select('*').eq('player_id', id).single();
-      const { data: headshot } = await supabase.from('player_headshots').select('headshot').eq('player_id', id).single();
+      const { data: player } = await supabase
+        .from("players")
+        .select("*")
+        .eq("player_id", id)
+        .single();
+
+      const { data: headshot } = await supabase
+        .from("player_headshots")
+        .select("headshot")
+        .eq("player_id", id)
+        .single();
+
       setPlayerInfo(player);
       setHeadshotUrl(headshot?.headshot);
     };
@@ -283,65 +343,128 @@ export default function PlayerPage() {
     fetchPlayerData();
   }, [id]);
 
+  // -------- options (seasons/age/exp/pos seasons + synergy rows) - now merged
   useEffect(() => {
     if (!id || !playerInfo) return;
 
-    const guard = ['Guard', 'Guard-Forward'].includes(playerInfo.position);
-    const wing = ['Forward', 'Forward-Guard'].includes(playerInfo.position);
-    const positionTable = guard ? 'guard_percentiles' : wing ? 'wing_percentiles' : 'forward_percentiles';
+    const guard = ["Guard", "Guard-Forward"].includes(playerInfo.position);
+    const wing = ["Forward", "Forward-Guard"].includes(playerInfo.position);
+    const positionTable = guard
+      ? "guard_percentiles"
+      : wing
+      ? "wing_percentiles"
+      : "forward_percentiles";
 
     const fetchOptions = async () => {
-      const [
-        { data: seasonRows },
-        { data: ageRows },
-        { data: expRows },
-        { data: posRows },
-        { data: synergyData }
-      ] = await Promise.all([
-        supabase.from('playtype_percentiles').select('season').eq('PLAYER_ID', id),
-        supabase.from('playtype_percentiles_age').select('age').eq('PLAYER_ID', id),
-        supabase.from('playtype_percentiles_exp').select('experience').eq('PLAYER_ID', id),
-        supabase.from(positionTable).select('season').eq('PLAYER_ID', id),
-        supabase.from('synergy').select('*').eq('PLAYER_ID', id) // 🆕 synergy full data
-      ]);
+      const [seasonRows, ageRows, expRows, posRows, synergyData] =
+        await Promise.all([
+          fetchMergedRows({
+            baseTable: "playtype_percentiles",
+            liveTable: "live_playtype_percentiles",
+            select: "PLAYER_ID, season",
+            filters: [{ col: "PLAYER_ID", op: "eq", val: id }],
+            keyCols: ["PLAYER_ID", "season"],
+          }),
+          fetchMergedRows({
+            baseTable: "playtype_percentiles_age",
+            liveTable: "live_playtype_percentiles_age",
+            select: "PLAYER_ID, age",
+            filters: [{ col: "PLAYER_ID", op: "eq", val: id }],
+            keyCols: ["PLAYER_ID", "age"],
+          }),
+          fetchMergedRows({
+            baseTable: "playtype_percentiles_exp",
+            liveTable: "live_playtype_percentiles_exp",
+            select: "PLAYER_ID, experience",
+            filters: [{ col: "PLAYER_ID", op: "eq", val: id }],
+            keyCols: ["PLAYER_ID", "experience"],
+          }),
+          fetchMergedRows({
+            baseTable: positionTable,
+            liveTable: `live_${positionTable}`,
+            select: "PLAYER_ID, season",
+            filters: [{ col: "PLAYER_ID", op: "eq", val: id }],
+            keyCols: ["PLAYER_ID", "season"],
+          }),
+          fetchMergedRows({
+            baseTable: "synergy",
+            liveTable: "live_synergy",
+            select: "*",
+            filters: [{ col: "PLAYER_ID", op: "eq", val: id }],
+            // adjust PLAY_TYPE if your column name differs
+            keyCols: ["PLAYER_ID", "SEASON", "TEAM_ID", "PLAY_TYPE"],
+          }),
+        ]);
 
-      const getUnique = (arr, key) => (arr ? [...new Set(arr.map(row => row[key]))].sort() : []);
+      const getUnique = (arr, key) =>
+        arr ? [...new Set(arr.map((row) => row[key]))].sort() : [];
 
-      const seasons = getUnique(seasonRows, 'season');
-      const ages = getUnique(ageRows, 'age');
-      const experiences = getUnique(expRows, 'experience');
-      const positionSeasons = getUnique(posRows, 'season');
-      const synergySeasons = getUnique(synergyData, 'SEASON'); 
-      const teamIds = getUnique(synergyData, 'TEAM_ID');
+      const seasons = getUnique(seasonRows, "season");
+      const ages = getUnique(ageRows, "age");
+      const experiences = getUnique(expRows, "experience");
+      const positionSeasons = getUnique(posRows, "season");
+
+      const synergySeasons = getUnique(synergyData, "SEASON");
+      const teamIds = getUnique(synergyData, "TEAM_ID");
+
       setTeamOptions(teamIds);
-      setSelectedTeam(teamIds[0]);
+      setSelectedTeam(teamIds?.[0] ?? "");
 
       setSeasons(seasons);
-      setSelectedSeason(seasons[0]);
+      setSelectedSeason(seasons?.[0] ?? "");
+
       setAgeOptions(ages);
-      setSelectedAge(ages[0]);
+      setSelectedAge(ages?.[0] ?? "");
+
       setExperienceOptions(experiences);
-      setSelectedExperience(experiences[0]);
+      setSelectedExperience(experiences?.[0] ?? "");
+
       setPositionSeasons(positionSeasons);
-      setSelectedPositionSeason(positionSeasons[0]);
-      setSynergyRows(synergyData || []); // 🆕
-      setSelectedSynergySeason(synergySeasons[0]); // 🆕
-      setShotChartSeason(seasons[0]);
+      setSelectedPositionSeason(positionSeasons?.[0] ?? "");
+
+      setSynergyRows(synergyData || []);
+      setSelectedSynergySeason(synergySeasons?.[0] ?? "");
+
+      setShotChartSeason(seasons?.[0] ?? "");
     };
 
     fetchOptions();
   }, [id, playerInfo]);
 
+  // -------- season percentiles + values (merged)
   useEffect(() => {
     if (!id || !selectedSeason) return;
 
     const fetchMergedStats = async () => {
-      const { data: pct } = await supabase.from('playtype_percentiles').select('*').eq('PLAYER_ID', id).eq('season', selectedSeason).single();
-      const { data: raw } = await supabase.from('playtype_values').select('*').eq('PLAYER_ID', id).eq('season', selectedSeason).single();
+      const pct = await fetchSingleMerged({
+        baseTable: "playtype_percentiles",
+        liveTable: "live_playtype_percentiles",
+        select: "*",
+        filters: [
+          { col: "PLAYER_ID", op: "eq", val: id },
+          { col: "season", op: "eq", val: selectedSeason },
+        ],
+        keyCols: ["PLAYER_ID", "season"],
+      });
+
+      const raw = await fetchSingleMerged({
+        baseTable: "playtype_values",
+        liveTable: "live_playtype_values",
+        select: "*",
+        filters: [
+          { col: "PLAYER_ID", op: "eq", val: id },
+          { col: "season", op: "eq", val: selectedSeason },
+        ],
+        keyCols: ["PLAYER_ID", "season"],
+      });
 
       const merged = Object.entries(pct || {})
-        .filter(([key]) => !['PLAYER_ID', 'PLAYER_NAME', 'TEAM_ID', 'season'].includes(key))
-        .map(([key, val]) => ({ stat_name: key, percentile: val, raw_value: raw?.[key.replace('_pct', '')] }));
+        .filter(([key]) => !["PLAYER_ID", "PLAYER_NAME", "TEAM_ID", "season"].includes(key))
+        .map(([key, val]) => ({
+          stat_name: key,
+          percentile: val,
+          raw_value: raw?.[key.replace("_pct", "")],
+        }));
 
       setPercentiles(merged);
     };
@@ -349,16 +472,42 @@ export default function PlayerPage() {
     fetchMergedStats();
   }, [id, selectedSeason]);
 
+  // -------- age percentiles + values (merged)
   useEffect(() => {
     if (!id || !selectedAge || !selectedSeason) return;
 
     const fetchMergedStats = async () => {
-      const { data: pct } = await supabase.from('playtype_percentiles_age').select('*').eq('PLAYER_ID', id).eq('age', selectedAge).single();
-      const { data: raw } = await supabase.from('playtype_values').select('*').eq('PLAYER_ID', id).eq('season', selectedSeason).single();
+      const pct = await fetchSingleMerged({
+        baseTable: "playtype_percentiles_age",
+        liveTable: "live_playtype_percentiles_age",
+        select: "*",
+        filters: [
+          { col: "PLAYER_ID", op: "eq", val: id },
+          { col: "age", op: "eq", val: selectedAge },
+        ],
+        keyCols: ["PLAYER_ID", "age"],
+      });
+
+      const raw = await fetchSingleMerged({
+        baseTable: "playtype_values",
+        liveTable: "live_playtype_values",
+        select: "*",
+        filters: [
+          { col: "PLAYER_ID", op: "eq", val: id },
+          { col: "season", op: "eq", val: selectedSeason },
+        ],
+        keyCols: ["PLAYER_ID", "season"],
+      });
 
       const merged = Object.entries(pct || {})
-        .filter(([key]) => !['PLAYER_ID', 'PLAYER_NAME', 'TEAM_ID', 'season', 'age'].includes(key))
-        .map(([key, val]) => ({ stat_name: key, percentile: val, raw_value: raw?.[key.replace('_pct', '')] }));
+        .filter(([key]) =>
+          !["PLAYER_ID", "PLAYER_NAME", "TEAM_ID", "season", "age"].includes(key)
+        )
+        .map(([key, val]) => ({
+          stat_name: key,
+          percentile: val,
+          raw_value: raw?.[key.replace("_pct", "")],
+        }));
 
       setAgePercentiles(merged);
     };
@@ -366,16 +515,42 @@ export default function PlayerPage() {
     fetchMergedStats();
   }, [id, selectedAge, selectedSeason]);
 
+  // -------- experience percentiles + values (merged)
   useEffect(() => {
     if (!id || !selectedExperience || !selectedSeason) return;
 
     const fetchMergedStats = async () => {
-      const { data: pct } = await supabase.from('playtype_percentiles_exp').select('*').eq('PLAYER_ID', id).eq('experience', selectedExperience).single();
-      const { data: raw } = await supabase.from('playtype_values').select('*').eq('PLAYER_ID', id).eq('season', selectedSeason).single();
+      const pct = await fetchSingleMerged({
+        baseTable: "playtype_percentiles_exp",
+        liveTable: "live_playtype_percentiles_exp",
+        select: "*",
+        filters: [
+          { col: "PLAYER_ID", op: "eq", val: id },
+          { col: "experience", op: "eq", val: selectedExperience },
+        ],
+        keyCols: ["PLAYER_ID", "experience"],
+      });
+
+      const raw = await fetchSingleMerged({
+        baseTable: "playtype_values",
+        liveTable: "live_playtype_values",
+        select: "*",
+        filters: [
+          { col: "PLAYER_ID", op: "eq", val: id },
+          { col: "season", op: "eq", val: selectedSeason },
+        ],
+        keyCols: ["PLAYER_ID", "season"],
+      });
 
       const merged = Object.entries(pct || {})
-        .filter(([key]) => !['PLAYER_ID', 'PLAYER_NAME', 'TEAM_ID', 'season', 'experience'].includes(key))
-        .map(([key, val]) => ({ stat_name: key, percentile: val, raw_value: raw?.[key.replace('_pct', '')] }));
+        .filter(([key]) =>
+          !["PLAYER_ID", "PLAYER_NAME", "TEAM_ID", "season", "experience"].includes(key)
+        )
+        .map(([key, val]) => ({
+          stat_name: key,
+          percentile: val,
+          raw_value: raw?.[key.replace("_pct", "")],
+        }));
 
       setExpPercentiles(merged);
     };
@@ -383,20 +558,50 @@ export default function PlayerPage() {
     fetchMergedStats();
   }, [id, selectedExperience, selectedSeason]);
 
+  // -------- position percentiles + values (merged)
   useEffect(() => {
-    if (!id || !selectedPositionSeason || !playerInfo) return;
+    if (!id || !selectedPositionSeason || !playerInfo || !selectedSeason) return;
 
-    const guard = ['Guard', 'Guard-Forward'].includes(playerInfo.position);
-    const wing = ['Forward', 'Forward-Guard'].includes(playerInfo.position);
-    const positionTable = guard ? 'guard_percentiles' : wing ? 'wing_percentiles' : 'forward_percentiles';
+    const guard = ["Guard", "Guard-Forward"].includes(playerInfo.position);
+    const wing = ["Forward", "Forward-Guard"].includes(playerInfo.position);
+    const positionTable = guard
+      ? "guard_percentiles"
+      : wing
+      ? "wing_percentiles"
+      : "forward_percentiles";
 
     const fetchMergedStats = async () => {
-      const { data: pct } = await supabase.from(positionTable).select('*').eq('PLAYER_ID', id).eq('season', selectedPositionSeason).single();
-      const { data: raw } = await supabase.from('playtype_values').select('*').eq('PLAYER_ID', id).eq('season', selectedSeason).single();
+      const pct = await fetchSingleMerged({
+        baseTable: positionTable,
+        liveTable: `live_${positionTable}`,
+        select: "*",
+        filters: [
+          { col: "PLAYER_ID", op: "eq", val: id },
+          { col: "season", op: "eq", val: selectedPositionSeason },
+        ],
+        keyCols: ["PLAYER_ID", "season"],
+      });
+
+      const raw = await fetchSingleMerged({
+        baseTable: "playtype_values",
+        liveTable: "live_playtype_values",
+        select: "*",
+        filters: [
+          { col: "PLAYER_ID", op: "eq", val: id },
+          { col: "season", op: "eq", val: selectedSeason },
+        ],
+        keyCols: ["PLAYER_ID", "season"],
+      });
 
       const merged = Object.entries(pct || {})
-        .filter(([key]) => !['PLAYER_ID', 'PLAYER_NAME', 'TEAM_ID', 'season', 'position'].includes(key))
-        .map(([key, val]) => ({ stat_name: key, percentile: val, raw_value: raw?.[key.replace('_pct', '')] }));
+        .filter(([key]) =>
+          !["PLAYER_ID", "PLAYER_NAME", "TEAM_ID", "season", "position"].includes(key)
+        )
+        .map(([key, val]) => ({
+          stat_name: key,
+          percentile: val,
+          raw_value: raw?.[key.replace("_pct", "")],
+        }));
 
       setPosPercentiles(merged);
     };
