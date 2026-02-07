@@ -392,7 +392,7 @@ export default function PlayerPage() {
             select: "*",
             filters: [{ col: "PLAYER_ID", op: "eq", val: id }],
             // adjust PLAY_TYPE if your column name differs
-            keyCols: ["PLAYER_ID", "SEASON", "TEAM_ID"],
+            keyCols: ["PLAYER_ID", "SEASON", "TEAM_ID", "PLAY_TYPE"],
           }),
         ]);
 
