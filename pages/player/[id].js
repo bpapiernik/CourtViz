@@ -286,6 +286,37 @@ const fetchSingleMerged = async (args) => {
   return rows?.[0] ?? null;
 };
 
+// ---- synergy-only key + merge (keeps many rows per season) ----
+const makeSynergyKey = (r) => [
+  r?.PLAYER_ID,
+  r?.SEASON,
+  r?.TEAM_ID,
+  r?.PLAY_TYPE,
+  r?.TYPE_GROUPING,
+].map(v => String(v ?? "")).join("|");
+
+const mergeSynergyPreferLive = (baseRows = [], liveRows = []) => {
+  const map = new Map();
+  for (const r of baseRows) map.set(makeSynergyKey(r), r);
+  for (const r of liveRows) map.set(makeSynergyKey(r), r); // live overwrites same PK
+  return Array.from(map.values());
+};
+
+const fetchSynergyMerged = async ({ playerId }) => {
+  const qBase = supabase.from("synergy").select("*").eq("PLAYER_ID", playerId);
+  const qLive = supabase.from("live_synergy").select("*").eq("PLAYER_ID", playerId);
+
+  const [{ data: baseData, error: e1 }, { data: liveData, error: e2 }] =
+    await Promise.all([qBase, qLive]);
+
+  // fallbacks if one fails
+  if (e2 && !e1) return baseData || [];
+  if (e1 && !e2) return liveData || [];
+  if (e1 && e2) return [];
+
+  return mergeSynergyPreferLive(baseData || [], liveData || []);
+};
+
 // --- component ---
 export default function PlayerPage() {
   const { id } = useRouter().query;
@@ -386,14 +417,7 @@ export default function PlayerPage() {
             filters: [{ col: "PLAYER_ID", op: "eq", val: id }],
             keyCols: ["PLAYER_ID", "season"],
           }),
-          fetchMergedRows({
-            baseTable: "synergy",
-            liveTable: "live_synergy",
-            select: "*",
-            filters: [{ col: "PLAYER_ID", op: "eq", val: id }],
-            // adjust PLAY_TYPE if your column name differs
-            keyCols: ["PLAYER_ID", "SEASON", "TEAM_ID", "PLAY_TYPE", "TYPE_GROUPING"],
-          }),
+          fetchSynergyMerged({ playerId: id }),
         ]);
 
       const getUnique = (arr, key) =>
