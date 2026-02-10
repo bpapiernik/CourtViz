@@ -261,69 +261,74 @@ export default function DailyMatchupViz() {
   //   - source === Historic => historic_games by range
   // ----------------------------
   const fetchMatchups = async () => {
-    setMatchupsLoading(true);
-    setMatchups([]);
+  setMatchupsLoading(true);
+  setMatchups([]);
 
-    try {
-      const todayCT = getTodayCTIso();
+  try {
+    const todayCT = getTodayCTIso();
 
-      if (source === "Today") {
-        const { data, error } = await supabase
-          .from("today_games")
-          .select(
-            [
-              "date",
-              "home",
-              "away",
-              "home_win_prob",
-              "away_win_prob",
-              "vegas_line",
-              "vegas_ou",
-              "suggested_odds",
-              "spread_diff",
-              "official_play",
-              "model_favorite",
-              "percentage_to_match",
-              "suggested_spread_raw",
-              "suggested_spread_adj",
-            ].join(",")
-          )
-          .eq("date", todayCT)
-          .order("date", { ascending: true })
-          .order("home", { ascending: true });
+    if (source === "Today") {
+      // --- TODAY (no paging needed) ---
+      const { data, error } = await supabase
+        .from("today_games")
+        .select(
+          [
+            "date",
+            "home",
+            "away",
+            "home_win_prob",
+            "away_win_prob",
+            "vegas_line",
+            "vegas_ou",
+            "suggested_odds",
+            "spread_diff",
+            "official_play",
+            "model_favorite",
+            "percentage_to_match",
+            "suggested_spread_raw",
+            "suggested_spread_adj",
+          ].join(",")
+        )
+        .eq("date", todayCT)
+        .order("date", { ascending: true })
+        .order("home", { ascending: true });
 
-        if (error) {
-          console.error("Error fetching today_games:", error);
-          return;
-        }
+      if (error) {
+        console.error("Error fetching today_games:", error);
+        return;
+      }
 
-        const rows = (data || []).map((r) => ({
-          source: "TODAY",
-          date: r.date,
-          home: r.home,
-          away: r.away,
-          home_win_prob: r.home_win_prob,
-          away_win_prob: r.away_win_prob,
-          vegas_line: r.vegas_line,
-          vegas_ou: r.vegas_ou,
-          suggested_odds: r.suggested_odds,
-          spread_diff: r.spread_diff,
-          official_play: r.official_play,
-          // not in today_games
-          score: null,
-          home_margin_actual: null,
-          model_pick: null,
-          model_correct: null,
-          official_pick: null,
-          official_win: null,
-          official_push: null,
-        }));
+      const rows = (data || []).map((r) => ({
+        source: "TODAY",
+        date: r.date,
+        home: r.home,
+        away: r.away,
+        home_win_prob: r.home_win_prob,
+        away_win_prob: r.away_win_prob,
+        vegas_line: r.vegas_line,
+        vegas_ou: r.vegas_ou,
+        suggested_odds: r.suggested_odds,
+        spread_diff: r.spread_diff,
+        official_play: r.official_play,
+        score: null,
+        home_margin_actual: null,
+        model_pick: null,
+        model_correct: null,
+        official_pick: null,
+        official_win: null,
+        official_push: null,
+      }));
 
-        setMatchups(rows);
-      } else {
-        // Historic range
-        if (!fromDate || !toDate) return;
+      setMatchups(rows);
+    } else {
+      // --- HISTORIC (WITH PAGING) ---
+      if (!fromDate || !toDate) return;
 
+      let allRows = [];
+      let from = 0;
+      const pageSize = 1000;
+
+      while (true) {
         const { data, error } = await supabase
           .from("historic_games")
           .select(
@@ -350,24 +355,32 @@ export default function DailyMatchupViz() {
           .gte("date", fromDate)
           .lte("date", toDate)
           .order("date", { ascending: true })
-          .order("home", { ascending: true });
+          .order("home", { ascending: true })
+          .range(from, from + pageSize - 1);
 
         if (error) {
           console.error("Error fetching historic_games:", error);
           return;
         }
 
-        const rows = (data || []).map((r) => ({
-          source: "HISTORIC",
-          ...r,
-        }));
+        allRows = allRows.concat(data || []);
 
-        setMatchups(rows);
+        if (!data || data.length < pageSize) break;
+        from += pageSize;
       }
-    } finally {
-      setMatchupsLoading(false);
+
+      const rows = allRows.map((r) => ({
+        source: "HISTORIC",
+        ...r,
+      }));
+
+      setMatchups(rows);
     }
-  };
+  } finally {
+    setMatchupsLoading(false);
+  }
+};
+
 
   // initial fetch
   useEffect(() => {
