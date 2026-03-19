@@ -17,7 +17,7 @@ const ROUND_OPTIONS = [
   { value: 'champion', label: 'Wins Championship' },
 ];
 
-const REGION_NAMES = { W: 'East', X: 'West', Y: 'South', Z: 'Midwest' };
+const REGION_NAMES = { W: 'East', X: 'South', Y: 'West', Z: 'Midwest' };
 
 const SUPPRESS_DELTA = {
   loss_r1:  [],
