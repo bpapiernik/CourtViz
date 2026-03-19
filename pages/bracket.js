@@ -69,6 +69,10 @@ function getSeedNum(seed) {
   return seed ? seed.slice(1) : '99';
 }
 
+function getRegion(seed) {
+  return seed ? REGION_NAMES[seed[0]] || seed[0] : '';
+}
+
 function displayName(name) {
   if (name === "State John's") return "St. John's";
   return name;
@@ -83,9 +87,9 @@ const COLS = [
   { key: 'winner',       label: 'Champ %',       delta: 'delta_winner' },
 ];
 
-const PAGE_BG  = '#f5f0e6';
-const CARD_BG  = '#ede8dc';
-const BORDER   = '#c8bfaa';
+const PAGE_BG   = '#f5f0e6';
+const CARD_BG   = '#ede8dc';
+const BORDER    = '#c8bfaa';
 const TEXT_MAIN = '#2c2416';
 const TEXT_SUB  = '#7a6e5f';
 
@@ -102,8 +106,9 @@ export default function BracketPage() {
   const [round2, setRound2] = useState('');
 
   const [activeConditions, setActiveConditions] = useState([]);
-  const [sortCol, setSortCol] = useState('seed');
-  const [sortDir, setSortDir] = useState('asc');
+  const [sortCol, setSortCol]   = useState('seed_num');
+  const [sortDir, setSortDir]   = useState('asc');
+  const [filterRegion, setFilterRegion] = useState('');
 
   useEffect(() => {
     fetch(`${API}/baseline`)
@@ -157,11 +162,20 @@ export default function BracketPage() {
 
   function sortedTeams(list) {
     return [...list].sort((a, b) => {
-      if (sortCol === 'seed') {
+      if (sortCol === 'seed_num') {
         const aNum = parseInt(getSeedNum(a.seed));
         const bNum = parseInt(getSeedNum(b.seed));
-        if (aNum !== bNum) return sortDir === 'asc' ? aNum - bNum : bNum - aNum;
-        return (a.seed?.[0] || '').localeCompare(b.seed?.[0] || '');
+        return sortDir === 'asc' ? aNum - bNum : bNum - aNum;
+      }
+      if (sortCol === 'region') {
+        const aR = getRegion(a.seed);
+        const bR = getRegion(b.seed);
+        const cmp = aR.localeCompare(bR);
+        return sortDir === 'asc' ? cmp : -cmp;
+      }
+      if (sortCol === 'teams') {
+        const cmp = displayName(a.teams).localeCompare(displayName(b.teams));
+        return sortDir === 'asc' ? cmp : -cmp;
       }
       const av = a[sortCol] ?? 0;
       const bv = b[sortCol] ?? 0;
@@ -171,7 +185,12 @@ export default function BracketPage() {
 
   function handleSort(col) {
     if (sortCol === col) setSortDir(d => d === 'asc' ? 'desc' : 'asc');
-    else { setSortCol(col); setSortDir('desc'); }
+    else { setSortCol(col); setSortDir(col === 'seed_num' ? 'asc' : 'desc'); }
+  }
+
+  function sortArrow(col) {
+    if (sortCol !== col) return '';
+    return sortDir === 'asc' ? ' ↑' : ' ↓';
   }
 
   const condTeamSet = new Set(activeConditions.map(c => c.team));
@@ -189,6 +208,11 @@ export default function BracketPage() {
       return { ...t, isScenario: false, notAffected: true };
     });
   })();
+
+  // Apply region filter
+  const filteredData = filterRegion
+    ? displayData.filter(r => r.seed?.[0] === filterRegion)
+    : displayData;
 
   return (
     <div style={{ background: PAGE_BG, minHeight: '100vh', padding: '28px 24px', fontFamily: 'Georgia, serif' }}>
@@ -313,6 +337,29 @@ export default function BracketPage() {
         </div>
       )}
 
+      {/* Region Filter + Table */}
+      {!loading && !error && (
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 12 }}>
+          <span style={{ color: TEXT_SUB, fontSize: 12, fontFamily: 'monospace' }}>Filter by region:</span>
+          {['', 'W', 'X', 'Y', 'Z'].map(r => (
+            <button
+              key={r}
+              onClick={() => setFilterRegion(r)}
+              style={{
+                background: filterRegion === r ? '#1d4ed8' : CARD_BG,
+                color: filterRegion === r ? '#fff' : TEXT_MAIN,
+                border: `1px solid ${filterRegion === r ? '#1d4ed8' : BORDER}`,
+                borderRadius: 20, padding: '4px 14px', fontSize: 12,
+                cursor: 'pointer', fontFamily: 'monospace', fontWeight: 600,
+                transition: 'all 0.15s'
+              }}
+            >
+              {r === '' ? 'All' : REGION_NAMES[r]}
+            </button>
+          ))}
+        </div>
+      )}
+
       {/* Table */}
       {loading ? (
         <div style={{ color: TEXT_SUB, textAlign: 'center', padding: 60, fontFamily: 'monospace' }}>
@@ -326,20 +373,23 @@ export default function BracketPage() {
             <thead>
               <tr style={{ background: CARD_BG, borderBottom: `2px solid ${BORDER}` }}>
                 <th onClick={() => handleSort('teams')} style={{ ...thStyle, textAlign: 'left', paddingLeft: 16, color: TEXT_SUB }}>
-                  Team {sortCol === 'teams' ? (sortDir === 'asc' ? '↑' : '↓') : ''}
+                  Team{sortArrow('teams')}
                 </th>
-                <th onClick={() => handleSort('seed')} style={{ ...thStyle, color: TEXT_SUB }}>
-                  Seed {sortCol === 'seed' ? (sortDir === 'asc' ? '↑' : '↓') : ''}
+                <th onClick={() => handleSort('region')} style={{ ...thStyle, color: TEXT_SUB }}>
+                  Region{sortArrow('region')}
+                </th>
+                <th onClick={() => handleSort('seed_num')} style={{ ...thStyle, color: TEXT_SUB }}>
+                  Seed{sortArrow('seed_num')}
                 </th>
                 {COLS.map(c => (
                   <th key={c.key} onClick={() => handleSort(c.key)} style={{ ...thStyle, color: TEXT_SUB }}>
-                    {c.label} {sortCol === c.key ? (sortDir === 'asc' ? '↑' : '↓') : ''}
+                    {c.label}{sortArrow(c.key)}
                   </th>
                 ))}
               </tr>
             </thead>
             <tbody>
-              {displayData.map((row, idx) => {
+              {filteredData.map((row, idx) => {
                 const isConditioned = condTeamSet.has(row.teams);
                 const isScenario    = row.isScenario;
                 const notAffected   = row.notAffected;
@@ -357,6 +407,7 @@ export default function BracketPage() {
                       transition: 'opacity 0.2s',
                     }}
                   >
+                    {/* Team */}
                     <td style={{ ...tdStyle, textAlign: 'left', paddingLeft: 16, color: isConditioned ? '#1d4ed8' : TEXT_MAIN, fontWeight: isConditioned ? 700 : 400 }}>
                       {displayName(row.teams)}
                       {isConditioned && (
@@ -366,10 +417,17 @@ export default function BracketPage() {
                       )}
                     </td>
 
+                    {/* Region */}
                     <td style={{ ...tdStyle, color: TEXT_SUB, fontFamily: 'monospace' }}>
-                      {row.seed ? `${REGION_NAMES[row.seed[0]]} ${parseInt(getSeedNum(row.seed))}` : '—'}
+                      {row.seed ? getRegion(row.seed) : '—'}
                     </td>
 
+                    {/* Seed number */}
+                    <td style={{ ...tdStyle, color: TEXT_SUB, fontFamily: 'monospace' }}>
+                      {row.seed ? parseInt(getSeedNum(row.seed)) : '—'}
+                    </td>
+
+                    {/* Stat columns */}
                     {COLS.map(c => {
                       const val      = row[c.key];
                       const delta    = row[c.delta];
