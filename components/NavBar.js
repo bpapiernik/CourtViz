@@ -13,7 +13,8 @@ export default function NavBar() {
         <Link href="/portfolio">Brian&apos;s Portfolio</Link>
         <Link href="/simulator">CBB Simulator</Link>
         <Link href="/dailymatchupviz">Daily MatchupViz</Link>
-        <Link href="/heliocentric-leaderboard">Heliocentric Leaderbord</Link>
+        <Link href="/heliocentric-leaderboard">Heliocentric Leaderboard</Link>
+        <Link href="/bracket">Bracket</Link>
       </div>
 
       <div className="flex items-center gap-4">
