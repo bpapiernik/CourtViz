@@ -90,6 +90,8 @@ function getRegion(seed) {
 
 function displayName(name) {
   if (name === "State John's") return "St. John's";
+  if (name === "SMU") return "Miami OH";
+  if (name === "Lehigh") return "Prairie View";
   return name;
 }
 
