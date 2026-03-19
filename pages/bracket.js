@@ -17,10 +17,10 @@ const ROUND_OPTIONS = [
   { value: 'champion', label: 'Wins Championship' },
 ];
 
-const REGION_NAMES = { W: 'East', X: 'South', Y: 'West', Z: 'Midwest' };
+const REGION_NAMES = { W: 'East', X: 'West', Y: 'South', Z: 'Midwest' };
 
-// Which columns should NOT show deltas based on the condition round
-// (rounds already played can't change)
+// Columns to suppress (show dash, white bg) based on condition round
+// because those rounds have already been played in the scenario
 const SUPPRESS_DELTA = {
   loss_r1:  [],
   loss_r2:  ['round32'],
@@ -450,15 +450,16 @@ export default function BracketPage() {
 
                     {/* Stat columns */}
                     {COLS.map(c => {
-                      const val      = row[c.key];
-                      const delta    = row[c.delta];
-                      const hasDelta = isScenario
+                      const val          = row[c.key];
+                      const delta        = row[c.delta];
+                      const isSuppressed = isScenario && suppressedCols.has(c.key);
+                      const hasDelta     = isScenario
+                        && !isSuppressed
                         && delta !== undefined
                         && delta !== null
-                        && Math.abs(delta * 100) >= 0.01
-                        && !suppressedCols.has(c.key);
+                        && Math.abs(delta * 100) >= 0.01;
                       const dc      = hasDelta ? deltaColor(delta) : null;
-                      const bg      = hasDelta ? dc.bg : heatBlue(val);
+                      const bg      = isSuppressed ? 'transparent' : hasDelta ? dc.bg : heatBlue(val);
                       const textClr = hasDelta ? dc.text : (val > 0.4 ? '#fff' : val > 0.1 ? '#1e3a8a' : TEXT_SUB);
 
                       return (
@@ -470,7 +471,7 @@ export default function BracketPage() {
                           fontWeight: hasDelta ? 700 : 400,
                           transition: 'background 0.3s, color 0.3s',
                         }}>
-                          {isConditioned ? '—' : (
+                          {isConditioned || isSuppressed ? '—' : (
                             <>
                               {fmt(val)}
                               {hasDelta && (
