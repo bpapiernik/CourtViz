@@ -19,6 +19,23 @@ const ROUND_OPTIONS = [
 
 const REGION_NAMES = { W: 'East', X: 'South', Y: 'West', Z: 'Midwest' };
 
+// Which columns should NOT show deltas based on the condition round
+// (rounds already played can't change)
+const SUPPRESS_DELTA = {
+  loss_r1:  [],
+  loss_r2:  ['round32'],
+  loss_r3:  ['round32', 'sweet16'],
+  loss_r4:  ['round32', 'sweet16', 'elite8'],
+  loss_r5:  ['round32', 'sweet16', 'elite8', 'final4'],
+  loss_r6:  ['round32', 'sweet16', 'elite8', 'final4', 'championship'],
+  win_r1:   [],
+  win_r2:   ['round32'],
+  win_r3:   ['round32', 'sweet16'],
+  win_r4:   ['round32', 'sweet16', 'elite8'],
+  win_r5:   ['round32', 'sweet16', 'elite8', 'final4'],
+  champion: [],
+};
+
 function parseApiResponse(data) {
   if (typeof data === 'string') return JSON.parse(data);
   if (Array.isArray(data) && data.length === 1 && typeof data[0] === 'string') return JSON.parse(data[0]);
@@ -106,8 +123,8 @@ export default function BracketPage() {
   const [round2, setRound2] = useState('');
 
   const [activeConditions, setActiveConditions] = useState([]);
-  const [sortCol, setSortCol]   = useState('seed_num');
-  const [sortDir, setSortDir]   = useState('asc');
+  const [sortCol, setSortCol]           = useState('seed_num');
+  const [sortDir, setSortDir]           = useState('asc');
   const [filterRegion, setFilterRegion] = useState('');
 
   useEffect(() => {
@@ -195,6 +212,11 @@ export default function BracketPage() {
 
   const condTeamSet = new Set(activeConditions.map(c => c.team));
 
+  // Build suppressed columns set from all active conditions
+  const suppressedCols = new Set(
+    activeConditions.flatMap(c => SUPPRESS_DELTA[c.round] || [])
+  );
+
   const displayData = (() => {
     if (!scenarioData || activeConditions.length === 0) {
       return sortedTeams(baseline).map(t => ({ ...t, isScenario: false }));
@@ -209,7 +231,6 @@ export default function BracketPage() {
     });
   })();
 
-  // Apply region filter
   const filteredData = filterRegion
     ? displayData.filter(r => r.seed?.[0] === filterRegion)
     : displayData;
@@ -337,7 +358,7 @@ export default function BracketPage() {
         </div>
       )}
 
-      {/* Region Filter + Table */}
+      {/* Region Filter */}
       {!loading && !error && (
         <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 12 }}>
           <span style={{ color: TEXT_SUB, fontSize: 12, fontFamily: 'monospace' }}>Filter by region:</span>
@@ -422,7 +443,7 @@ export default function BracketPage() {
                       {row.seed ? getRegion(row.seed) : '—'}
                     </td>
 
-                    {/* Seed number */}
+                    {/* Seed */}
                     <td style={{ ...tdStyle, color: TEXT_SUB, fontFamily: 'monospace' }}>
                       {row.seed ? parseInt(getSeedNum(row.seed)) : '—'}
                     </td>
@@ -431,10 +452,14 @@ export default function BracketPage() {
                     {COLS.map(c => {
                       const val      = row[c.key];
                       const delta    = row[c.delta];
-                      const hasDelta = isScenario && delta !== undefined && delta !== null && Math.abs(delta * 100) >= 0.01;
-                      const dc       = hasDelta ? deltaColor(delta) : null;
-                      const bg       = hasDelta ? dc.bg : heatBlue(val);
-                      const textClr  = hasDelta ? dc.text : (val > 0.4 ? '#fff' : val > 0.1 ? '#1e3a8a' : TEXT_SUB);
+                      const hasDelta = isScenario
+                        && delta !== undefined
+                        && delta !== null
+                        && Math.abs(delta * 100) >= 0.01
+                        && !suppressedCols.has(c.key);
+                      const dc      = hasDelta ? deltaColor(delta) : null;
+                      const bg      = hasDelta ? dc.bg : heatBlue(val);
+                      const textClr = hasDelta ? dc.text : (val > 0.4 ? '#fff' : val > 0.1 ? '#1e3a8a' : TEXT_SUB);
 
                       return (
                         <td key={c.key} style={{
