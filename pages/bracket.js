@@ -459,8 +459,8 @@ export default function BracketPage() {
                         && delta !== null
                         && Math.abs(delta * 100) >= 0.01;
                       const dc      = hasDelta ? deltaColor(delta) : null;
-                      const bg      = isSuppressed ? 'transparent' : hasDelta ? dc.bg : heatBlue(val);
-                      const textClr = hasDelta ? dc.text : (val > 0.4 ? '#fff' : val > 0.1 ? '#1e3a8a' : TEXT_SUB);
+                      const bg = isSuppressed ? 'transparent' : hasDelta ? dc.bg : 'transparent';
+                      const textClr = hasDelta ? dc.text : TEXT_MAIN;
 
                       return (
                         <td key={c.key} style={{
