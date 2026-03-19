@@ -19,8 +19,6 @@ const ROUND_OPTIONS = [
 
 const REGION_NAMES = { W: 'East', X: 'West', Y: 'South', Z: 'Midwest' };
 
-// Columns to suppress (show dash, white bg) based on condition round
-// because those rounds have already been played in the scenario
 const SUPPRESS_DELTA = {
   loss_r1:  [],
   loss_r2:  ['round32'],
@@ -211,14 +209,14 @@ export default function BracketPage() {
   }
 
   const condTeamSet = new Set(activeConditions.map(c => c.team));
+  const hasScenario = activeConditions.length > 0;
 
-  // Build suppressed columns set from all active conditions
   const suppressedCols = new Set(
     activeConditions.flatMap(c => SUPPRESS_DELTA[c.round] || [])
   );
 
   const displayData = (() => {
-    if (!scenarioData || activeConditions.length === 0) {
+    if (!scenarioData || !hasScenario) {
       return sortedTeams(baseline).map(t => ({ ...t, isScenario: false }));
     }
     const scenarioMap = {};
@@ -424,7 +422,7 @@ export default function BracketPage() {
                     style={{
                       background: rowBg,
                       borderBottom: `1px solid ${BORDER}`,
-                      opacity: notAffected && activeConditions.length > 0 ? 0.35 : 1,
+                      opacity: notAffected && hasScenario ? 0.35 : 1,
                       transition: 'opacity 0.2s',
                     }}
                   >
@@ -458,9 +456,20 @@ export default function BracketPage() {
                         && delta !== undefined
                         && delta !== null
                         && Math.abs(delta * 100) >= 0.01;
-                      const dc      = hasDelta ? deltaColor(delta) : null;
-                      const bg = isSuppressed ? 'transparent' : hasDelta ? dc.bg : 'transparent';
-                      const textClr = hasDelta ? dc.text : TEXT_MAIN;
+                      const dc       = hasDelta ? deltaColor(delta) : null;
+
+                      // Blue heat map only when no scenario is active
+                      const bg = isSuppressed
+                        ? 'transparent'
+                        : hasDelta
+                          ? dc.bg
+                          : !hasScenario ? heatBlue(val) : 'transparent';
+
+                      const textClr = hasDelta
+                        ? dc.text
+                        : !hasScenario
+                          ? (val > 0.4 ? '#fff' : val > 0.1 ? '#1e3a8a' : TEXT_SUB)
+                          : TEXT_MAIN;
 
                       return (
                         <td key={c.key} style={{
