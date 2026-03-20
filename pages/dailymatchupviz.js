@@ -243,7 +243,7 @@ export default function DailyMatchupViz() {
       url.searchParams.append("team1", team1);
       url.searchParams.append("team2", team2);
       url.searchParams.append("year", "2026");
-      url.searchParams.append("num_simulations", "10000");
+      url.searchParams.append("num_simulations", "100000");
 
       const res = await fetch(url.toString());
       const data = await res.json();
