@@ -265,7 +265,7 @@ export default function BracketPage() {
               onChange={e => slot.setTeam(e.target.value)}
               style={{
                 background: PAGE_BG, color: TEXT_MAIN, border: `1px solid ${BORDER}`,
-                borderRadius: 6, padding: '6px 10px', fontSize: 13, flex: 1, maxWidth: 220,
+                borderRadius: 6, padding: '6px 10px', fontSize: 13, flex: 1,
                 fontFamily: 'Georgia, serif'
               }}
             >
@@ -280,7 +280,7 @@ export default function BracketPage() {
               onChange={e => slot.setRound(e.target.value)}
               style={{
                 background: PAGE_BG, color: TEXT_MAIN, border: `1px solid ${BORDER}`,
-                borderRadius: 6, padding: '6px 10px', fontSize: 13, flex: 1, maxWidth: 200,
+                borderRadius: 6, padding: '6px 10px', fontSize: 13, flex: 1,
                 fontFamily: 'monospace'
               }}
             >
