@@ -258,7 +258,7 @@ export default function BracketPage() {
           { team: team1, setTeam: setTeam1, round: round1, setRound: setRound1, label: 'Team A' },
           { team: team2, setTeam: setTeam2, round: round2, setRound: setRound2, label: 'Team B' },
         ].map((slot, idx) => (
-          <div key={idx} style={{ display: 'flex', gap: 10, alignItems: 'center', marginBottom: 10 }}>
+          <div key={idx} style={{ display: 'flex', flexWrap: 'wrap', gap: 8, alignItems: 'center', marginBottom: 10 }}>
             <span style={{ color: TEXT_SUB, fontSize: 12, width: 52, fontFamily: 'monospace' }}>{slot.label}</span>
             <select
               value={slot.team}
