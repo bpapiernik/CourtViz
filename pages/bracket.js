@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 
 const API = 'https://march-madness-bracket-query.onrender.com';
 
-const ROUND_OPTIONS = [
+const ROUND_OPTIONS_FULL = [
   { value: 'loss_r1',  label: 'Loses R64' },
   { value: 'loss_r2',  label: 'Loses R32' },
   { value: 'loss_r3',  label: 'Loses Sweet 16' },
@@ -17,9 +17,20 @@ const ROUND_OPTIONS = [
   { value: 'champion', label: 'Wins Championship' },
 ];
 
-const REGION_NAMES = { W: 'East', X: 'South', Y: 'West', Z: 'Midwest' };
+const ROUND_OPTIONS_S16 = [
+  { value: 'loss_r3',  label: 'Loses Sweet 16' },
+  { value: 'loss_r4',  label: 'Loses Elite 8' },
+  { value: 'loss_r5',  label: 'Loses Final 4' },
+  { value: 'loss_r6',  label: 'Loses Championship' },
+  { value: 'win_r3',   label: 'Wins Sweet 16' },
+  { value: 'win_r4',   label: 'Wins Elite 8' },
+  { value: 'win_r5',   label: 'Wins Final 4' },
+  { value: 'champion', label: 'Wins Championship' },
+];
 
-const SUPPRESS_DELTA = {
+const REGION_NAMES = { W: 'East', X: 'West', Y: 'South', Z: 'Midwest' };
+
+const SUPPRESS_DELTA_FULL = {
   loss_r1:  [],
   loss_r2:  ['round32'],
   loss_r3:  ['round32', 'sweet16'],
@@ -33,6 +44,33 @@ const SUPPRESS_DELTA = {
   win_r5:   ['round32', 'sweet16', 'elite8', 'final4'],
   champion: [],
 };
+
+const SUPPRESS_DELTA_S16 = {
+  loss_r3:  ['round32', 'sweet16'],
+  loss_r4:  ['round32', 'sweet16', 'elite8'],
+  loss_r5:  ['round32', 'sweet16', 'elite8', 'final4'],
+  loss_r6:  ['round32', 'sweet16', 'elite8', 'final4', 'championship'],
+  win_r3:   ['round32', 'sweet16'],
+  win_r4:   ['round32', 'sweet16', 'elite8'],
+  win_r5:   ['round32', 'sweet16', 'elite8', 'final4'],
+  champion: ['round32', 'sweet16'],
+};
+
+const COLS_FULL = [
+  { key: 'round32',      label: 'Round 32 %',    delta: 'delta_round32' },
+  { key: 'sweet16',      label: 'Sweet 16 %',    delta: 'delta_sweet16' },
+  { key: 'elite8',       label: 'Elite Eight %', delta: 'delta_elite8' },
+  { key: 'final4',       label: 'Final Four %',  delta: 'delta_final4' },
+  { key: 'championship', label: 'Title Game %',  delta: 'delta_championship' },
+  { key: 'winner',       label: 'Champ %',       delta: 'delta_winner' },
+];
+
+const COLS_S16 = [
+  { key: 'elite8',       label: 'Elite Eight %', delta: 'delta_elite8' },
+  { key: 'final4',       label: 'Final Four %',  delta: 'delta_final4' },
+  { key: 'championship', label: 'Title Game %',  delta: 'delta_championship' },
+  { key: 'winner',       label: 'Champ %',       delta: 'delta_winner' },
+];
 
 function parseApiResponse(data) {
   if (typeof data === 'string') return JSON.parse(data);
@@ -95,15 +133,6 @@ function displayName(name) {
   return name;
 }
 
-const COLS = [
-  { key: 'round32',      label: 'Round 32 %',    delta: 'delta_round32' },
-  { key: 'sweet16',      label: 'Sweet 16 %',    delta: 'delta_sweet16' },
-  { key: 'elite8',       label: 'Elite Eight %', delta: 'delta_elite8' },
-  { key: 'final4',       label: 'Final Four %',  delta: 'delta_final4' },
-  { key: 'championship', label: 'Title Game %',  delta: 'delta_championship' },
-  { key: 'winner',       label: 'Champ %',       delta: 'delta_winner' },
-];
-
 const PAGE_BG   = '#f5f0e6';
 const CARD_BG   = '#ede8dc';
 const BORDER    = '#c8bfaa';
@@ -111,7 +140,11 @@ const TEXT_MAIN = '#2c2416';
 const TEXT_SUB  = '#7a6e5f';
 
 export default function BracketPage() {
-  const [baseline, setBaseline]         = useState([]);
+  // Default to Sweet 16 mode
+  const [mode, setMode] = useState('s16');
+
+  const [baselineFull, setBaselineFull] = useState([]);
+  const [baselineS16,  setBaselineS16]  = useState([]);
   const [scenarioData, setScenarioData] = useState(null);
   const [loading, setLoading]           = useState(true);
   const [querying, setQuerying]         = useState(false);
@@ -127,12 +160,15 @@ export default function BracketPage() {
   const [sortDir, setSortDir]           = useState('asc');
   const [filterRegion, setFilterRegion] = useState('');
 
+  // Load both baselines on mount
   useEffect(() => {
-    fetch(`${API}/baseline`)
-      .then(r => r.json())
-      .then(data => {
-        const arr = parseApiResponse(data);
-        setBaseline(Array.isArray(arr) ? arr : []);
+    Promise.all([
+      fetch(`${API}/baseline`).then(r => r.json()),
+      fetch(`${API}/s16/baseline`).then(r => r.json()),
+    ])
+      .then(([full, s16]) => {
+        setBaselineFull(Array.isArray(parseApiResponse(full)) ? parseApiResponse(full) : []);
+        setBaselineS16(Array.isArray(parseApiResponse(s16))   ? parseApiResponse(s16)  : []);
         setLoading(false);
       })
       .catch(e => {
@@ -140,6 +176,15 @@ export default function BracketPage() {
         setLoading(false);
       });
   }, []);
+
+  // Clear conditions when switching modes
+  useEffect(() => {
+    setActiveConditions([]);
+    setScenarioData(null);
+    setTeam1(''); setRound1('');
+    setTeam2(''); setRound2('');
+    setFilterRegion('');
+  }, [mode]);
 
   useEffect(() => {
     if (activeConditions.length === 0) {
@@ -149,8 +194,9 @@ export default function BracketPage() {
     setQuerying(true);
     const conditions = {};
     activeConditions.forEach(c => { conditions[c.team] = c.round; });
-    const encoded = encodeURIComponent(JSON.stringify(conditions));
-    fetch(`${API}/query?conditions=${encoded}&sort_by=delta_winner`)
+    const encoded  = encodeURIComponent(JSON.stringify(conditions));
+    const endpoint = mode === 's16' ? `${API}/s16/query` : `${API}/query`;
+    fetch(`${endpoint}?conditions=${encoded}&sort_by=delta_winner`)
       .then(r => r.json())
       .then(data => {
         const arr = parseApiResponse(data);
@@ -158,9 +204,14 @@ export default function BracketPage() {
         setQuerying(false);
       })
       .catch(() => setQuerying(false));
-  }, [activeConditions]);
+  }, [activeConditions, mode]);
 
-  const allTeams = [...baseline].map(t => t.teams).sort();
+  const isS16        = mode === 's16';
+  const baseline     = isS16 ? baselineS16 : baselineFull;
+  const ROUND_OPTIONS = isS16 ? ROUND_OPTIONS_S16 : ROUND_OPTIONS_FULL;
+  const SUPPRESS_DELTA = isS16 ? SUPPRESS_DELTA_S16 : SUPPRESS_DELTA_FULL;
+  const COLS         = isS16 ? COLS_S16 : COLS_FULL;
+  const allTeams     = [...baseline].map(t => t.teams).sort();
 
   function addCondition(team, round) {
     if (!team || !round) return;
@@ -210,9 +261,8 @@ export default function BracketPage() {
     return sortDir === 'asc' ? ' ↑' : ' ↓';
   }
 
-  const condTeamSet = new Set(activeConditions.map(c => c.team));
-  const hasScenario = activeConditions.length > 0;
-
+  const condTeamSet  = new Set(activeConditions.map(c => c.team));
+  const hasScenario  = activeConditions.length > 0;
   const suppressedCols = new Set(
     activeConditions.flatMap(c => SUPPRESS_DELTA[c.round] || [])
   );
@@ -239,13 +289,39 @@ export default function BracketPage() {
     <div style={{ background: PAGE_BG, minHeight: '100vh', padding: '28px 24px', fontFamily: 'Georgia, serif' }}>
 
       {/* Header */}
-      <div style={{ marginBottom: 24 }}>
-        <h1 style={{ color: TEXT_MAIN, fontSize: 28, fontWeight: 700, letterSpacing: '-0.5px', margin: 0 }}>
-          March Madness 2026
-        </h1>
-        <p style={{ color: TEXT_SUB, fontSize: 13, margin: '4px 0 0', fontFamily: 'monospace' }}>
-          100,000 simulation scenario checker — select conditions to see bracket impact
-        </p>
+      <div style={{ marginBottom: 24, display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', flexWrap: 'wrap', gap: 12 }}>
+        <div>
+          <h1 style={{ color: TEXT_MAIN, fontSize: 28, fontWeight: 700, letterSpacing: '-0.5px', margin: 0 }}>
+            March Madness 2026
+          </h1>
+          <p style={{ color: TEXT_SUB, fontSize: 13, margin: '4px 0 0', fontFamily: 'monospace' }}>
+            100,000 simulation scenario checker — select conditions to see bracket impact
+          </p>
+        </div>
+
+        {/* Mode toggle */}
+        <div style={{ display: 'flex', background: CARD_BG, border: `1px solid ${BORDER}`, borderRadius: 10, padding: 4, gap: 4 }}>
+          {[
+            { key: 's16',  label: '🏀 Sweet 16', sub: 'Current round' },
+            { key: 'full', label: '📋 Full Bracket', sub: 'All 64 teams' },
+          ].map(m => (
+            <button
+              key={m.key}
+              onClick={() => setMode(m.key)}
+              style={{
+                background: mode === m.key ? '#1d4ed8' : 'transparent',
+                color: mode === m.key ? '#fff' : TEXT_SUB,
+                border: 'none', borderRadius: 7,
+                padding: '8px 16px', cursor: 'pointer',
+                fontFamily: 'monospace', fontSize: 12, fontWeight: 700,
+                transition: 'all 0.15s', textAlign: 'center', lineHeight: 1.4,
+              }}
+            >
+              <div>{m.label}</div>
+              <div style={{ fontSize: 10, opacity: 0.8, fontWeight: 400 }}>{m.sub}</div>
+            </button>
+          ))}
+        </div>
       </div>
 
       {/* Scenario Builder */}
@@ -428,7 +504,6 @@ export default function BracketPage() {
                       transition: 'opacity 0.2s',
                     }}
                   >
-                    {/* Team */}
                     <td style={{ ...tdStyle, textAlign: 'left', paddingLeft: 16, color: isConditioned ? '#1d4ed8' : TEXT_MAIN, fontWeight: isConditioned ? 700 : 400 }}>
                       {displayName(row.teams)}
                       {isConditioned && (
@@ -438,17 +513,14 @@ export default function BracketPage() {
                       )}
                     </td>
 
-                    {/* Region */}
                     <td style={{ ...tdStyle, color: TEXT_SUB, fontFamily: 'monospace' }}>
                       {row.seed ? getRegion(row.seed) : '—'}
                     </td>
 
-                    {/* Seed */}
                     <td style={{ ...tdStyle, color: TEXT_SUB, fontFamily: 'monospace' }}>
                       {row.seed ? parseInt(getSeedNum(row.seed)) : '—'}
                     </td>
 
-                    {/* Stat columns */}
                     {COLS.map(c => {
                       const val          = row[c.key];
                       const delta        = row[c.delta];
@@ -458,15 +530,12 @@ export default function BracketPage() {
                         && delta !== undefined
                         && delta !== null
                         && Math.abs(delta * 100) >= 0.01;
-                      const dc       = hasDelta ? deltaColor(delta) : null;
-
-                      // Blue heat map only when no scenario is active
-                      const bg = isSuppressed
+                      const dc      = hasDelta ? deltaColor(delta) : null;
+                      const bg      = isSuppressed
                         ? 'transparent'
                         : hasDelta
                           ? dc.bg
                           : !hasScenario ? heatBlue(val) : 'transparent';
-
                       const textClr = hasDelta
                         ? dc.text
                         : !hasScenario
