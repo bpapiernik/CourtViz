@@ -292,7 +292,10 @@ export default function Players() {
             </span>
           </div>
           <p style={{ margin: '4px 0 0', fontSize: 13, opacity: 0.45 }}>
-            Search, filter by position, or click a column to sort. Click on a player to be bring to their stats page.
+            Search, filter by position, or click a column to sort. 
+          </p>
+          <p style={{ margin: 0, fontSize: 13, opacity: 0.45 }}>
+            Click any player to view their full stats page.
           </p>
         </div>
 

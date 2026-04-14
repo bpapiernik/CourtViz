@@ -299,7 +299,10 @@ export default function Finder() {
         <div style={{ marginBottom: 28 }}>
           <h1 style={{ fontSize: 26, fontWeight: 700, margin: 0 }}>Player Finder</h1>
           <p style={{ margin: '4px 0 0', fontSize: 13, opacity: 0.45 }}>
-            Filter players by age, season, and percentile thresholds across tracking and synergy stats. Click on a player to bring you to their stats page.
+            Filter players by age, season, and percentile thresholds across tracking and synergy stats. 
+          </p>
+          <p style={{ margin: 0, fontSize: 13, opacity: 0.45 }}>
+            Click any player to view their full stats page.
           </p>
         </div>
 
