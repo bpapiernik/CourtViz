@@ -157,6 +157,17 @@ export default function Finder() {
 
     if (baseError) { console.error(baseError); setLoading(false); return; }
 
+    // Fetch raw values (same columns, no _pct suffix)
+    const { data: valuesData, error: valuesError } = await supabase
+      .from('playtype_values')
+      .select('*')
+      .eq('season', season);
+
+    if (valuesError) { console.error(valuesError); setLoading(false); return; }
+
+    // PLAYER_ID -> raw values row
+    const valuesMap = new Map((valuesData || []).map(p => [p.PLAYER_ID, p]));
+
     const { data: ageData, error: ageError } = await supabase
       .from('playtype_percentiles_age')
       .select('PLAYER_ID, season, age')
@@ -221,6 +232,7 @@ export default function Finder() {
     setResults(filtered.map(player => ({
       ...player,
       synergy: synergyMap.get(player.PLAYER_ID) || [],
+      values: valuesMap.get(player.PLAYER_ID) || {},
     })));
     setLoading(false);
   };
@@ -571,7 +583,12 @@ export default function Finder() {
                               pct = match?.PERCENTILE != null ? Math.round(match.PERCENTILE * 100) : null;
                             } else {
                               pct = Math.round((player[filter.stat] || 0) * 100);
-                              displayVal = `${pct}%`;
+                              // Strip _pct suffix to get the values column name
+                              const valueKey = filter.stat.replace(/_pct$/, '');
+                              const rawVal = player.values?.[valueKey];
+                              displayVal = rawVal != null
+                                ? (Number.isInteger(rawVal) ? rawVal : parseFloat(rawVal).toFixed(2))
+                                : `${pct}%`;
                             }
 
                             return (
