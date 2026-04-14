@@ -173,22 +173,38 @@ export default function Players() {
   useEffect(() => {
     async function fetchPlayers() {
       setLoading(true);
-      const { data: playersData, error: playersError } = await supabase
-        .from('players')
-        .select('player_id, player_name, position, height, weight, school, birthdate, draft_year, draft_round, draft_number');
+      const batchSize = 1000;
 
-      const { data: headshotsData, error: headshotsError } = await supabase
-        .from('player_headshots')
-        .select('player_id, headshot');
-
-      if (playersError || headshotsError) {
-        console.error('Error:', playersError || headshotsError);
-        setLoading(false);
-        return;
+      // Paginate players
+      let allPlayers = [];
+      let from = 0;
+      while (true) {
+        const { data, error } = await supabase
+          .from('players')
+          .select('player_id, player_name, position, height, weight, school, birthdate, draft_year, draft_round, draft_number')
+          .range(from, from + batchSize - 1);
+        if (error) { console.error('Error fetching players:', error); break; }
+        allPlayers = [...allPlayers, ...data];
+        if (data.length < batchSize) break;
+        from += batchSize;
       }
 
-      const headshotMap = new Map(headshotsData.map(h => [h.player_id, h.headshot]));
-      setPlayers(playersData.map(p => ({ ...p, headshot: headshotMap.get(p.player_id) || null })));
+      // Paginate headshots
+      let allHeadshots = [];
+      from = 0;
+      while (true) {
+        const { data, error } = await supabase
+          .from('player_headshots')
+          .select('player_id, headshot')
+          .range(from, from + batchSize - 1);
+        if (error) { console.error('Error fetching headshots:', error); break; }
+        allHeadshots = [...allHeadshots, ...data];
+        if (data.length < batchSize) break;
+        from += batchSize;
+      }
+
+      const headshotMap = new Map(allHeadshots.map(h => [h.player_id, h.headshot]));
+      setPlayers(allPlayers.map(p => ({ ...p, headshot: headshotMap.get(p.player_id) || null })));
       setLoading(false);
     }
     fetchPlayers();
