@@ -302,6 +302,20 @@ export default function HeliocentricLeaderboard() {
                     </div>
                   ))}
                 </div>
+                <p style={{ margin: '12px 0 0', fontSize: 12, lineHeight: 1.6, opacity: 0.7 }}>
+                  Classifications use thresholds comparing the shooter&apos;s EP to the best available teammate&apos;s EP.
+                  The <strong>Heliocentric Value</strong> adds a <strong>+0.20 buffer</strong> to account for turnovers
+                  and shot clock violations — so a shot worth <code>0.97 EP</code> against a teammate option
+                  of <code>1.14 EP</code> gives <code>(0.97 − 1.14) + 0.20 = +0.03</code>.{' '}
+                  <a
+                    href="https://court-viz.vercel.app/portfolio/heliocentric"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    style={{ color: 'var(--navbar)', textDecoration: 'underline', fontWeight: 600 }}
+                  >
+                    Full methodology →
+                  </a>
+                </p>
               </div>
             </div>
           )}
