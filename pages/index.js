@@ -16,7 +16,7 @@ const TOOLS = [
   { href: '/player',         emoji: '👤', label: 'Players',          desc: 'Browse the full NBA roster with stats, position filters, and search.' },
   { href: '/finder',         emoji: '🔍', label: 'Player Finder',    desc: 'Filter players by percentile thresholds across tracking and synergy stats.' },
   { href: '/simulator',      emoji: '🏀', label: 'CBB Simulator',    desc: 'Simulate college basketball matchups across any season using 100k simulations.' },
-  { href: '/dailymatchupviz',emoji: '📅', label: 'Daily MatchupViz', desc: 'Track today\'s games, model picks, official plays, and historic results.' },
+  { href: '/dailymatchupviz',emoji: '📅', label: 'Daily MatchupViz', desc: 'Track today&apos;s games, model picks, official plays, and historic results.' },
   { href: '/heliocentric-leaderboard', emoji: '☀️', label: 'Heliocentric', desc: 'Evaluate offensive decision-making using the Heliocentric Shot Selection metric.' },
 ];
 
@@ -243,8 +243,8 @@ export default function Home() {
             <div style={{ flex: '1 1 280px' }}>
               <p style={{ margin: '0 0 12px', fontSize: 14, lineHeight: 1.8, opacity: 0.8 }}>
                 My name is <strong>Brian Papiernik</strong> — a sports data scientist with experience across baseball, basketball, and multi-sport performance analysis.
-                I've worked as a Baseball Technology Operator for the <strong>Tampa Bay Rays</strong>, a Baseball Student Manager with <strong>Notre Dame Baseball</strong>,
-                and hold a <strong>Master's degree in Sports Analytics from Notre Dame</strong>.
+                I&apos;ve worked as a Baseball Technology Operator for the <strong>Tampa Bay Rays</strong>, a Baseball Student Manager with <strong>Notre Dame Baseball</strong>,
+                and hold a <strong>Master&apos;s degree in Sports Analytics from Notre Dame</strong>.
               </p>
               <p style={{ margin: '0 0 16px', fontSize: 14, lineHeight: 1.8, opacity: 0.8 }}>
                 I specialize in building end-to-end analytics pipelines, predictive models, and interactive tools for evaluating players and strategies.
