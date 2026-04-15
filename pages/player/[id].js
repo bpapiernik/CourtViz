@@ -433,7 +433,7 @@ export default function PlayerPage() {
             {/* Back arrow + Headshot stacked */}
             <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8, flexShrink: 0 }}>
               <a
-                href="/players"
+                href="/player"
                 style={{
                   display: 'inline-flex', alignItems: 'center', gap: 4,
                   fontSize: 11, fontFamily: 'var(--font-mono)', fontWeight: 700,
