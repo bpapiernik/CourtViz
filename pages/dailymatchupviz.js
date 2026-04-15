@@ -1,7 +1,7 @@
 // pages/dailymatchupviz.js
 import { useEffect, useMemo, useState } from "react";
 import { supabase } from "../lib/supabaseClient";
- 
+
 export default function DailyMatchupViz() {
   const [teams, setTeams] = useState([]);
   const [team1, setTeam1] = useState("");
@@ -9,7 +9,7 @@ export default function DailyMatchupViz() {
   const [result, setResult] = useState(null);
   const [simLoading, setSimLoading] = useState(false);
   const [historicOdds, setHistoricOdds] = useState([]);
- 
+
   const [source, setSource] = useState("Today");
   const [fromDate, setFromDate] = useState("");
   const [toDate, setToDate] = useState("");
@@ -24,7 +24,7 @@ export default function DailyMatchupViz() {
   const [sortDir, setSortDir] = useState("desc");
   const [officialRecord, setOfficialRecord] = useState({ wins: 0, losses: 0, pushes: 0, winPct: null });
   const [yesterdayRecord, setYesterdayRecord] = useState({ wins: 0, losses: 0, pushes: 0, winPct: null });
- 
+
   // ── Helpers ──────────────────────────────────────────────────────────────
   const getTodayCTIso = () => {
     const parts = new Intl.DateTimeFormat("en-CA", {
@@ -36,14 +36,14 @@ export default function DailyMatchupViz() {
     const d = parts.find(p => p.type === "day")?.value;
     return `${y}-${m}-${d}`;
   };
- 
+
   const formatPct = (decimal) => `${(Number(decimal) * 100).toFixed(2)}%`;
   const fmtLine = (num) => {
     const x = Number(num);
     if (!Number.isFinite(x)) return "";
     return Number.isInteger(x) ? `${x}` : `${x.toFixed(1)}`;
   };
- 
+
   const getOfficialPickDisplay = (r) => {
     if (String(r.official_play).toUpperCase() !== "YES") return "";
     const vegas = Number(r.vegas_line);
@@ -57,7 +57,7 @@ export default function DailyMatchupViz() {
     }
     return diff > 0 ? `${r.away} -${lineText}` : `${r.home} +${lineText}`;
   };
- 
+
   // ── Fetch teams + historic odds ───────────────────────────────────────────
   useEffect(() => {
     async function fetchTeams() {
@@ -84,7 +84,7 @@ export default function DailyMatchupViz() {
     fetchTeams();
     fetchHistoricOdds();
   }, []);
- 
+
   // ── Default date range ────────────────────────────────────────────────────
   useEffect(() => {
     const todayCT = getTodayCTIso();
@@ -95,7 +95,7 @@ export default function DailyMatchupViz() {
     setFromDate(fromIso);
     setToDate(todayCT);
   }, []);
- 
+
   useEffect(() => {
     if (source === "Today") {
       const todayCT = getTodayCTIso();
@@ -103,7 +103,7 @@ export default function DailyMatchupViz() {
       setToDate(todayCT);
     }
   }, [source]);
- 
+
   // ── Expected spread text ──────────────────────────────────────────────────
   const expectedSpreadText = useMemo(() => {
     if (!result || result.error) return null;
@@ -123,7 +123,7 @@ export default function DailyMatchupViz() {
     const lineText = Number.isInteger(line) ? `${line}` : `${line.toFixed(1)}`;
     return { team: favoriteTeam, line: lineText };
   }, [result, historicOdds]);
- 
+
   // ── Simulate ──────────────────────────────────────────────────────────────
   const simulateLiveMatchup = async () => {
     if (!team1 || !team2) return;
@@ -144,7 +144,7 @@ export default function DailyMatchupViz() {
       setSimLoading(false);
     }
   };
- 
+
   // ── Fetch matchups ────────────────────────────────────────────────────────
   const fetchMatchups = async () => {
     setMatchupsLoading(true);
@@ -180,11 +180,11 @@ export default function DailyMatchupViz() {
       setMatchupsLoading(false);
     }
   };
- 
+
   useEffect(() => {
     if (fromDate && toDate) fetchMatchups();
   }, [fromDate, toDate, source]);
- 
+
   // ── Official record ───────────────────────────────────────────────────────
   useEffect(() => {
     async function fetchOfficialRecord() {
@@ -216,7 +216,7 @@ export default function DailyMatchupViz() {
     }
     fetchOfficialRecord();
   }, []);
- 
+
   useEffect(() => {
     async function fetchYesterdayRecord() {
       const todayCT = getTodayCTIso();
@@ -242,7 +242,7 @@ export default function DailyMatchupViz() {
     }
     fetchYesterdayRecord();
   }, []);
- 
+
   // ── Filters + sort ────────────────────────────────────────────────────────
   const filteredMatchups = useMemo(() => {
     const s = searchText.trim().toLowerCase();
@@ -271,7 +271,7 @@ export default function DailyMatchupViz() {
       return true;
     });
   }, [matchups, homeContains, awayContains, officialPlayFilter, modelCorrectFilter, searchText]);
- 
+
   const sortedMatchups = useMemo(() => {
     const rows = [...filteredMatchups];
     const getVal = r => {
@@ -292,18 +292,18 @@ export default function DailyMatchupViz() {
     if (sortDir === "desc") rows.reverse();
     return rows;
   }, [filteredMatchups, sortKey, sortDir]);
- 
+
   const toggleSort = key => {
     if (sortKey === key) setSortDir(d => d === "asc" ? "desc" : "asc");
     else { setSortKey(key); setSortDir("asc"); }
   };
- 
+
   // ── Derived sim values ────────────────────────────────────────────────────
   const t1prob = result ? Number(result.team1_win_prob) : null;
   const t2prob = result ? Number(result.team2_win_prob) : null;
   const winner = result && t1prob != null && t2prob != null
     ? (t1prob >= t2prob ? result.team1 : result.team2) : null;
- 
+
   // ── Shared styles ─────────────────────────────────────────────────────────
   const inputStyle = {
     background: "transparent",
@@ -316,7 +316,7 @@ export default function DailyMatchupViz() {
     width: "100%",
     transition: "border-color 0.15s, box-shadow 0.15s",
   };
- 
+
   const labelStyle = {
     fontSize: 10,
     fontWeight: 700,
@@ -327,7 +327,7 @@ export default function DailyMatchupViz() {
     marginBottom: 5,
     display: "block",
   };
- 
+
   const thStyle = key => ({
     padding: "10px 12px",
     textAlign: "left",
@@ -342,7 +342,7 @@ export default function DailyMatchupViz() {
     whiteSpace: "nowrap",
     borderBottom: "2px solid color-mix(in srgb, var(--navbar) 70%, transparent)",
   });
- 
+
   const COLUMNS = [
     ["date", "Date"],
     ["home", "Home"],
@@ -362,7 +362,7 @@ export default function DailyMatchupViz() {
     ["official_pick", "Official Pick"],
     ["source", "Source"],
   ];
- 
+
   return (
     <>
       <style>{`
@@ -388,9 +388,9 @@ export default function DailyMatchupViz() {
           to { opacity: 1; transform: translateY(0); }
         }
       `}</style>
- 
+
       <div style={{ maxWidth: 1200, margin: "0 auto", padding: "32px 20px" }}>
- 
+
         {/* ── SIMULATOR ─────────────────────────────────────────────────── */}
         <div style={{ maxWidth: 700, margin: "0 auto 48px" }}>
           <div style={{ textAlign: "center", marginBottom: 28 }}>
@@ -402,7 +402,7 @@ export default function DailyMatchupViz() {
               2025–26 season · 100,000 simulations per matchup
             </p>
           </div>
- 
+
           {/* Team cards */}
           <div style={{ display: "grid", gridTemplateColumns: "1fr auto 1fr", gap: 12, alignItems: "end", marginBottom: 16 }}>
             {/* Team 1 */}
@@ -434,7 +434,7 @@ export default function DailyMatchupViz() {
                 </div>
               )}
             </div>
- 
+
             {/* VS */}
             <div style={{
               fontSize: 11, fontWeight: 700, fontFamily: "var(--font-mono)",
@@ -442,7 +442,7 @@ export default function DailyMatchupViz() {
               paddingBottom: result && !result.error ? 56 : 4,
               transition: "padding-bottom 0.3s",
             }}>VS</div>
- 
+
             {/* Team 2 */}
             <div className="team-card" style={{
               background: "color-mix(in srgb, var(--navbar) 12%, transparent)",
@@ -473,7 +473,7 @@ export default function DailyMatchupViz() {
               )}
             </div>
           </div>
- 
+
           {/* Simulate button */}
           <button
             className="sim-btn"
@@ -489,7 +489,7 @@ export default function DailyMatchupViz() {
           >
             {simLoading ? "Simulating 100,000 games…" : "Simulate Live Matchup"}
           </button>
- 
+
           {/* Result card */}
           {result && !result.error && (
             <div className="fade-up" style={{
@@ -517,7 +517,7 @@ export default function DailyMatchupViz() {
                   </div>
                 )}
               </div>
- 
+
               {/* Probability bar */}
               <div style={{ padding: "18px 20px 14px" }}>
                 <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 8, fontSize: 12, fontWeight: 600 }}>
@@ -551,7 +551,7 @@ export default function DailyMatchupViz() {
               </div>
             </div>
           )}
- 
+
           {result?.error && (
             <div className="fade-up" style={{
               border: "1.5px solid #dc262644", borderRadius: 10,
@@ -561,14 +561,14 @@ export default function DailyMatchupViz() {
             </div>
           )}
         </div>
- 
+
         {/* ── DAILY MATCHUPS ────────────────────────────────────────────── */}
         <div>
           {/* Section header + record badges */}
           <div style={{ marginBottom: 20 }}>
             <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap", marginBottom: 10 }}>
               <h2 style={{ fontSize: 22, fontWeight: 700, margin: 0 }}>Daily Matchups</h2>
- 
+
               {/* Season record badge */}
               <span style={{
                 background: "color-mix(in srgb, var(--navbar) 30%, transparent)",
@@ -587,7 +587,7 @@ export default function DailyMatchupViz() {
                   <span style={{ opacity: 0.6 }}>· {(officialRecord.winPct * 100).toFixed(1)}%</span>
                 )}
               </span>
- 
+
               {/* Yesterday badge */}
               <span style={{
                 background: "color-mix(in srgb, var(--navbar) 15%, transparent)",
@@ -607,7 +607,7 @@ export default function DailyMatchupViz() {
                 )}
               </span>
             </div>
- 
+
             {/* Definition notes */}
             <div style={{
               background: "color-mix(in srgb, var(--navbar) 10%, transparent)",
@@ -627,7 +627,7 @@ export default function DailyMatchupViz() {
               ))}
             </div>
           </div>
- 
+
           {/* Controls row */}
           <div style={{ display: "flex", gap: 12, flexWrap: "wrap", alignItems: "flex-end", marginBottom: 14 }}>
             <div style={{ flex: "0 0 auto" }}>
@@ -673,7 +673,7 @@ export default function DailyMatchupViz() {
               {matchupsLoading ? "Loading…" : "Refresh"}
             </button>
           </div>
- 
+
           {/* Filters row */}
           <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(160px, 1fr))", gap: 10, marginBottom: 16 }}>
             {[
@@ -714,13 +714,13 @@ export default function DailyMatchupViz() {
               />
             </div>
           </div>
- 
+
           {/* Row count */}
           <div style={{ fontSize: 12, fontFamily: "var(--font-mono)", opacity: 0.4, marginBottom: 8 }}>
             {sortedMatchups.length} game{sortedMatchups.length !== 1 ? "s" : ""}
             {matchups.length !== sortedMatchups.length ? ` / ${matchups.length} total` : ""}
           </div>
- 
+
           {/* Table */}
           <div style={{
             borderRadius: 10,
@@ -750,10 +750,17 @@ export default function DailyMatchupViz() {
                   {sortedMatchups.map((r, idx) => {
                     const isHistoric = r.source === "HISTORIC";
                     const mc = Number(r.model_correct);
+                    const op = String(r.official_play || "").toUpperCase();
+                    const ok = String(r.official_pick || "").toUpperCase();
+                    const isOfficialPlay = (op && op !== "NO") || (ok && ok !== "NO_PLAY");
+                    const ow = Number(r.official_win);
+                    const push = Number(r.official_push);
                     let rowBg = "transparent";
-                    if (isHistoric && mc === 1) rowBg = "color-mix(in srgb, #05966920, transparent)";
-                    if (isHistoric && mc === 0) rowBg = "color-mix(in srgb, #dc262620, transparent)";
- 
+                    if (isHistoric && isOfficialPlay && push !== 1) {
+                      if (ow === 1) rowBg = "color-mix(in srgb, #05966920, transparent)";
+                      if (ow === 0) rowBg = "color-mix(in srgb, #dc262620, transparent)";
+                    }
+
                     return (
                       <tr
                         key={`${r.source}-${r.date}-${r.home}-${r.away}-${idx}`}
@@ -812,7 +819,7 @@ export default function DailyMatchupViz() {
                       </tr>
                     );
                   })}
- 
+
                   {!matchupsLoading && sortedMatchups.length === 0 && (
                     <tr>
                       <td colSpan={17} style={{ padding: "40px 20px", textAlign: "center", opacity: 0.35, fontSize: 13 }}>
