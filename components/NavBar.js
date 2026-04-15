@@ -1,24 +1,24 @@
 // components/NavBar.js
-
+ 
 import Link from 'next/link';
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/router';
 import Image from 'next/image';
-
+ 
 export default function NavBar() {
   const [open, setOpen]       = useState(false);
   const [scrolled, setScrolled] = useState(false);
   const router = useRouter();
-
+ 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 10);
     window.addEventListener('scroll', onScroll, { passive: true });
     return () => window.removeEventListener('scroll', onScroll);
   }, []);
-
+ 
   // Close mobile menu on route change
   useEffect(() => { setOpen(false); }, [router.pathname]);
-
+ 
   const links = [
     { href: '/',                         label: 'Home' },
     { href: '/player',                   label: 'Players' },
@@ -30,12 +30,12 @@ export default function NavBar() {
     { href: '/heliocentric-leaderboard', label: 'Heliocentric Leaderboard' },
     { href: '/bracket',                  label: 'Bracket' },
   ];
-
+ 
   const isActive = (href) => {
     if (href === '/') return router.pathname === '/';
     return router.pathname.startsWith(href);
   };
-
+ 
   return (
     <>
       <style>{`
@@ -54,13 +54,16 @@ export default function NavBar() {
         .nav-link.active {
           opacity: 1;
           font-weight: 700;
+          background: color-mix(in srgb, var(--foreground) 8%, transparent);
+          border-radius: 6px;
+          padding: 3px 8px;
         }
         .nav-link.active::after {
           content: '';
           position: absolute;
           bottom: -2px;
-          left: 0;
-          right: 0;
+          left: 8px;
+          right: 8px;
           height: 2px;
           background: var(--foreground);
           border-radius: 99px;
@@ -87,8 +90,9 @@ export default function NavBar() {
           transition: opacity 0.15s;
         }
         .hamburger-btn:hover { opacity: 1; }
+        .logo-img:hover { transform: scale(1.08); }
       `}</style>
-
+ 
       <nav style={{
         background: 'var(--navbar)',
         position: 'sticky',
@@ -99,7 +103,7 @@ export default function NavBar() {
         backdropFilter: scrolled ? 'blur(8px)' : 'none',
       }}>
         <div style={{ maxWidth: 1400, margin: '0 auto', padding: '0 20px' }}>
-
+ 
           {/* ── Desktop ─────────────────────────────────────────────────── */}
           <div style={{
             display: 'flex',
@@ -122,21 +126,21 @@ export default function NavBar() {
                 </Link>
               ))}
             </div>
-
+ 
             {/* Right side: Search + Logo */}
             <div style={{ display: 'flex', alignItems: 'center', gap: 16, flexShrink: 0 }}>
               <Link
                 href="/search"
                 className={`nav-link${isActive('/search') ? ' active' : ''}`}
               >
-                Search
+                🔍 Search
               </Link>
-              <Link href="/" style={{ display: 'flex', alignItems: 'center' }}>
-                <Image src="/CourtVizLogo.png" alt="CourtViz" width={52} height={52} style={{ objectFit: 'contain' }} />
+              <Link href="/" style={{ display: 'flex', alignItems: 'center' }} className="logo-link">
+                <Image src="/CourtVizLogo.png" alt="CourtViz" width={52} height={52} style={{ objectFit: 'contain', transition: 'transform 0.2s ease' }} className="logo-img" />
               </Link>
             </div>
           </div>
-
+ 
           {/* ── Mobile ──────────────────────────────────────────────────── */}
           <div style={{
             display: 'none',
@@ -165,9 +169,9 @@ export default function NavBar() {
               )}
             </button>
           </div>
-
+ 
         </div>
-
+ 
         {/* Mobile dropdown */}
         {open && (
           <div style={{
@@ -189,7 +193,7 @@ export default function NavBar() {
           </div>
         )}
       </nav>
-
+ 
       {/* Responsive styles */}
       <style>{`
         @media (max-width: 768px) {
@@ -204,3 +208,4 @@ export default function NavBar() {
     </>
   );
 }
+ 
