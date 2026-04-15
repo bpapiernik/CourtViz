@@ -1,13 +1,14 @@
 // pages/players/[id].js
 
 import { useRouter } from 'next/router';
+import Link from 'next/link';
 import { useEffect, useState } from 'react';
 import { supabase } from '../../lib/supabaseClient';
 import PercentileSlider from '../../components/PercentileSlider';
 import PercentileSlider2 from '../../components/PercentileSlider2';
 import dynamic from 'next/dynamic';
 const ShotChart = dynamic(() => import('../../components/ShotChart'), { ssr: false });
-
+ 
 const statGroups = {
   "Speed Distance": [
     "DIST_MILES_OFF_SpeedDistance_pct","DIST_MILES_DEF_SpeedDistance_pct","AVG_SPEED_SpeedDistance_pct",
@@ -61,7 +62,7 @@ const statGroups = {
   All: [],
 };
 statGroups.All = Array.from(new Set(Object.values(statGroups).flat()));
-
+ 
 const statNameMap = {
   "DIST_MILES_OFF_SpeedDistance_pct": "Distance Miles (Offense)",
   "DIST_MILES_DEF_SpeedDistance_pct": "Distance Miles (Defense)",
@@ -149,7 +150,7 @@ const statNameMap = {
   "PAINT_TOUCH_PASSES_PCT_PaintTouch_pct": "Pass %",
   "PAINT_TOUCH_TOV_PCT_PaintTouch_pct": "Turnover %",
 };
-
+ 
 const teamIdToName = {
   1610612737: 'Atlanta Hawks', 1610612738: 'Boston Celtics', 1610612739: 'Cleveland Cavaliers',
   1610612740: 'New Orleans Pelicans', 1610612741: 'Chicago Bulls', 1610612742: 'Dallas Mavericks',
@@ -162,7 +163,7 @@ const teamIdToName = {
   1610612761: 'Toronto Raptors', 1610612762: 'Utah Jazz', 1610612763: 'Memphis Grizzlies',
   1610612764: 'Washington Wizards', 1610612765: 'Detroit Pistons', 1610612766: 'Charlotte Hornets',
 };
-
+ 
 const makeKey = (row, cols) => cols.map(c => String(row?.[c] ?? '')).join('|');
 const mergePreferLive = (baseRows = [], liveRows = [], keyCols = []) => {
   const map = new Map();
@@ -208,7 +209,7 @@ const fetchSynergyMerged = async ({ playerId }) => {
   if (e1 && e2) return [];
   return mergeSynergyPreferLive(baseData || [], liveData || []);
 };
-
+ 
 const POSITION_COLORS = {
   'Guard':          '#3b82f6',
   'Guard-Forward':  '#3b82f6',
@@ -218,11 +219,11 @@ const POSITION_COLORS = {
   'Center-Forward': '#d97706',
   'Forward-Center': '#d97706',
 };
-
+ 
 // ─── Component ───────────────────────────────────────────────────────────────
 export default function PlayerPage() {
   const { id } = useRouter().query;
-
+ 
   // ── All state identical to original ──────────────────────────────────────
   const [playerInfo, setPlayerInfo] = useState(null);
   const [headshotUrl, setHeadshotUrl] = useState(null);
@@ -249,7 +250,7 @@ export default function PlayerPage() {
   const [posPercentiles, setPosPercentiles] = useState([]);
   const [shotChartSeason, setShotChartSeason] = useState('');
   const [shotChartBins, setShotChartBins] = useState([]);
-
+ 
   // ── All useEffects identical to original ─────────────────────────────────
   useEffect(() => {
     if (!id) return;
@@ -261,7 +262,7 @@ export default function PlayerPage() {
     };
     fetchPlayerData();
   }, [id]);
-
+ 
   useEffect(() => {
     if (!id || !playerInfo) return;
     const guard = ['Guard', 'Guard-Forward'].includes(playerInfo.position);
@@ -298,7 +299,7 @@ export default function PlayerPage() {
     };
     fetchOptions();
   }, [id, playerInfo]);
-
+ 
   useEffect(() => {
     if (!id || !selectedSeason) return;
     const fetchMergedStats = async () => {
@@ -309,7 +310,7 @@ export default function PlayerPage() {
     };
     fetchMergedStats();
   }, [id, selectedSeason]);
-
+ 
   useEffect(() => {
     if (!id || !selectedAge || !selectedSeason) return;
     const fetchMergedStats = async () => {
@@ -320,7 +321,7 @@ export default function PlayerPage() {
     };
     fetchMergedStats();
   }, [id, selectedAge, selectedSeason]);
-
+ 
   useEffect(() => {
     if (!id || !selectedExperience || !selectedSeason) return;
     const fetchMergedStats = async () => {
@@ -331,7 +332,7 @@ export default function PlayerPage() {
     };
     fetchMergedStats();
   }, [id, selectedExperience, selectedSeason]);
-
+ 
   useEffect(() => {
     if (!id || !selectedPositionSeason || !playerInfo || !selectedSeason) return;
     const guard = ['Guard', 'Guard-Forward'].includes(playerInfo.position);
@@ -345,7 +346,7 @@ export default function PlayerPage() {
     };
     fetchMergedStats();
   }, [id, selectedPositionSeason, selectedSeason, playerInfo]);
-
+ 
   useEffect(() => {
     if (!id || !shotChartSeason) return;
     const fetchShotChart = async () => {
@@ -354,10 +355,10 @@ export default function PlayerPage() {
     };
     fetchShotChart();
   }, [id, shotChartSeason]);
-
+ 
   // ── Derived values for UI ─────────────────────────────────────────────────
   const posColor = POSITION_COLORS[playerInfo?.position] || '#94a3b8';
-
+ 
   const selectStyle = {
     background: 'transparent',
     border: '1.5px solid color-mix(in srgb, var(--foreground) 20%, transparent)',
@@ -369,7 +370,7 @@ export default function PlayerPage() {
     cursor: 'pointer',
     transition: 'border-color 0.15s',
   };
-
+ 
   const labelStyle = {
     fontSize: 10,
     fontWeight: 700,
@@ -380,14 +381,14 @@ export default function PlayerPage() {
     marginBottom: 4,
     display: 'block',
   };
-
+ 
   const sectionCardStyle = {
     background: 'color-mix(in srgb, var(--navbar) 10%, transparent)',
     border: '1.5px solid color-mix(in srgb, var(--navbar) 40%, transparent)',
     borderRadius: 10,
     padding: '14px 16px',
   };
-
+ 
   // ── JSX ───────────────────────────────────────────────────────────────────
   return (
     <>
@@ -403,9 +404,9 @@ export default function PlayerPage() {
         }
         .fade-up { animation: fadeUp 0.3s ease both; }
       `}</style>
-
+ 
       <div style={{ maxWidth: 1400, margin: '0 auto', padding: '28px 20px' }}>
-
+ 
         {/* ── PLAYER HEADER ─────────────────────────────────────────────── */}
         {playerInfo && (
           <div
@@ -428,7 +429,7 @@ export default function PlayerPage() {
               position: 'absolute', left: 0, top: 0, bottom: 0, width: 4,
               background: posColor, borderRadius: '12px 0 0 12px',
             }} />
-
+ 
             {/* Back arrow + Headshot stacked */}
             <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8, flexShrink: 0 }}>
               <Link
@@ -454,7 +455,7 @@ export default function PlayerPage() {
                 }}
               />
             </div>
-
+ 
             {/* Name + position */}
             <div style={{ flex: 1, minWidth: 0 }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap', marginBottom: 6 }}>
@@ -471,7 +472,7 @@ export default function PlayerPage() {
                   {playerInfo.position}
                 </span>
               </div>
-
+ 
               {/* Info chips */}
               <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
                 {[
@@ -493,10 +494,10 @@ export default function PlayerPage() {
             </div>
           </div>
         )}
-
+ 
         {/* ── SYNERGY + SHOT CHART ROW ───────────────────────────────────── */}
         <div style={{ display: 'flex', gap: 20, marginBottom: 24, flexWrap: 'wrap' }}>
-
+ 
           {/* Synergy block */}
           <div style={{ flex: '1 1 480px', minWidth: 0 }}>
             {/* Synergy controls card */}
@@ -544,7 +545,7 @@ export default function PlayerPage() {
                 </div>
               </div>
             </div>
-
+ 
             {/* Synergy sliders */}
             <div style={{
               ...sectionCardStyle,
@@ -578,7 +579,7 @@ export default function PlayerPage() {
                 ))}
             </div>
           </div>
-
+ 
           {/* Shot chart block */}
           <div style={{ flex: '1 1 380px', minWidth: 0 }}>
             {/* Shot chart controls card */}
@@ -595,7 +596,7 @@ export default function PlayerPage() {
                 ))}
               </select>
             </div>
-
+ 
             {/* Shot chart */}
             <div style={{
               ...sectionCardStyle,
@@ -611,7 +612,7 @@ export default function PlayerPage() {
             </div>
           </div>
         </div>
-
+ 
         {/* ── PERCENTILE CONTROLS CARD ───────────────────────────────────── */}
         <div style={{ ...sectionCardStyle, marginBottom: 20 }}>
           <div style={{
@@ -642,7 +643,7 @@ export default function PlayerPage() {
             ))}
           </div>
         </div>
-
+ 
         {/* ── PERCENTILE COLUMNS ────────────────────────────────────────── */}
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: 16 }}>
           {[
@@ -667,7 +668,7 @@ export default function PlayerPage() {
                   </div>
                 )}
               </div>
-
+ 
               {/* Stat group selector */}
               <select
                 className="ctrl-select"
@@ -679,7 +680,7 @@ export default function PlayerPage() {
                   <option key={g} value={g}>{g}</option>
                 ))}
               </select>
-
+ 
               {/* Sliders */}
               {data
                 .filter(item => statGroups[group].includes(item.stat_name))
@@ -694,7 +695,7 @@ export default function PlayerPage() {
             </div>
           ))}
         </div>
-
+ 
       </div>
     </>
   );
