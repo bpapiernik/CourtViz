@@ -407,30 +407,6 @@ export default function PlayerPage() {
 
       <div style={{ maxWidth: 1400, margin: '0 auto', padding: '28px 20px' }}>
 
-        {/* ── BACK BUTTON ──────────────────────────────────────────────── */}
-        <div style={{ marginBottom: 16 }}>
-          <a
-            href="/players"
-            style={{
-              display: 'inline-flex',
-              alignItems: 'center',
-              gap: 6,
-              fontSize: 12,
-              fontFamily: 'var(--font-mono)',
-              fontWeight: 700,
-              letterSpacing: 0.5,
-              color: 'var(--foreground)',
-              textDecoration: 'none',
-              opacity: 0.5,
-              transition: 'opacity 0.15s',
-            }}
-            onMouseEnter={e => e.currentTarget.style.opacity = 1}
-            onMouseLeave={e => e.currentTarget.style.opacity = 0.5}
-          >
-            ← Players
-          </a>
-        </div>
-
         {/* ── PLAYER HEADER ─────────────────────────────────────────────── */}
         {playerInfo && (
           <div
@@ -454,17 +430,31 @@ export default function PlayerPage() {
               background: posColor, borderRadius: '12px 0 0 12px',
             }} />
 
-            {/* Headshot */}
-            <img
-              src={headshotUrl || '/default-headshot.png'}
-              alt={playerInfo.player_name}
-              style={{
-                width: 88, height: 88, borderRadius: '50%',
-                objectFit: 'cover',
-                border: `3px solid ${posColor}`,
-                flexShrink: 0,
-              }}
-            />
+            {/* Back arrow + Headshot stacked */}
+            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8, flexShrink: 0 }}>
+              <a
+                href="/players"
+                style={{
+                  display: 'inline-flex', alignItems: 'center', gap: 4,
+                  fontSize: 11, fontFamily: 'var(--font-mono)', fontWeight: 700,
+                  letterSpacing: 0.5, color: 'var(--foreground)',
+                  textDecoration: 'none', opacity: 0.45, transition: 'opacity 0.15s',
+                }}
+                onMouseEnter={e => e.currentTarget.style.opacity = 1}
+                onMouseLeave={e => e.currentTarget.style.opacity = 0.45}
+              >
+                ← Players
+              </a>
+              <img
+                src={headshotUrl || '/default-headshot.png'}
+                alt={playerInfo.player_name}
+                style={{
+                  width: 88, height: 88, borderRadius: '50%',
+                  objectFit: 'cover',
+                  border: `3px solid ${posColor}`,
+                }}
+              />
+            </div>
 
             {/* Name + position */}
             <div style={{ flex: 1, minWidth: 0 }}>
