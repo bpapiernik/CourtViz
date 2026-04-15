@@ -96,18 +96,73 @@ export default function Home() {
       <div style={{ maxWidth: 860, margin: '0 auto', padding: '40px 20px' }}>
 
         {/* ── HERO ──────────────────────────────────────────────────────── */}
-        <div className="fade-up" style={{ textAlign: 'center', marginBottom: 48 }}>
-          <img
-            src="/CourtVizLogo.png"
-            alt="CourtViz"
-            style={{ height: 96, width: 'auto', marginBottom: 16 }}
-          />
-          <h1 style={{ fontSize: 32, fontWeight: 700, margin: '0 0 8px', letterSpacing: -0.5 }}>
-            CourtViz
-          </h1>
-          <p style={{ fontSize: 16, opacity: 0.55, margin: 0, maxWidth: 480, marginInline: 'auto' }}>
-            Full-stack NBA &amp; CBB analytics — from raw tracking data to interactive dashboards.
-          </p>
+        <div className="fade-up" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 24, marginBottom: 48, flexWrap: 'wrap' }}>
+          {/* Left: logo + tagline */}
+          <div style={{ textAlign: 'left' }}>
+            <img
+              src="/CourtVizLogo.png"
+              alt="CourtViz"
+              style={{ height: 96, width: 'auto', marginBottom: 16, display: 'block' }}
+            />
+            <h1 style={{ fontSize: 32, fontWeight: 700, margin: '0 0 8px', letterSpacing: -0.5 }}>
+              CourtViz
+            </h1>
+            <p style={{ fontSize: 16, opacity: 0.55, margin: 0, maxWidth: 380 }}>
+              Full-stack NBA &amp; CBB analytics — from raw tracking data to interactive dashboards.
+            </p>
+          </div>
+
+          {/* Right: Player of the Day card */}
+          {featured && (
+            <Link href={`/player/${featured.player_id}`} style={{ textDecoration: 'none', color: 'inherit', flexShrink: 0 }}>
+              <div
+                className="featured-card"
+                style={{
+                  width: 220,
+                  padding: '16px',
+                  borderRadius: 12,
+                  border: `1.5px solid ${posColor}44`,
+                  background: `linear-gradient(135deg, ${posColor}0d 0%, color-mix(in srgb, var(--navbar) 12%, transparent) 100%)`,
+                  cursor: 'pointer', position: 'relative', overflow: 'hidden',
+                }}
+              >
+                <div style={{ position: 'absolute', left: 0, top: 0, bottom: 0, width: 4, background: posColor, borderRadius: '12px 0 0 12px' }} />
+                <div style={{ fontSize: 9, fontWeight: 700, fontFamily: 'var(--font-mono)', letterSpacing: 2, textTransform: 'uppercase', opacity: 0.4, marginBottom: 10 }}>
+                  Player of the Day
+                </div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 10 }}>
+                  <div style={{
+                    width: 48, height: 48, borderRadius: '50%', overflow: 'hidden',
+                    border: `2px solid ${posColor}`, flexShrink: 0,
+                    background: 'color-mix(in srgb, var(--navbar) 30%, transparent)',
+                  }}>
+                    {featured.headshot ? (
+                      <img src={featured.headshot} alt={featured.player_name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                    ) : (
+                      <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 20, opacity: 0.3 }}>👤</div>
+                    )}
+                  </div>
+                  <div>
+                    <div style={{ fontWeight: 700, fontSize: 13, marginBottom: 3 }}>{featured.player_name}</div>
+                    {featured.position && (
+                      <span style={{
+                        background: `${posColor}18`, color: posColor,
+                        border: `1px solid ${posColor}44`,
+                        borderRadius: 5, padding: '2px 7px',
+                        fontSize: 9, fontWeight: 700, fontFamily: 'var(--font-mono)', letterSpacing: 1,
+                      }}>{featured.position}</span>
+                    )}
+                  </div>
+                </div>
+                {featured.school && (
+                  <div style={{ fontSize: 11, opacity: 0.4, fontFamily: 'var(--font-mono)', marginBottom: 10 }}>{featured.school}</div>
+                )}
+                <div style={{ fontSize: 11, fontFamily: 'var(--font-mono)', opacity: 0.5 }}>
+                  View Profile →
+                </div>
+              </div>
+            </Link>
+          )}
         </div>
 
         {/* ── ABOUT ME ──────────────────────────────────────────────────── */}
@@ -217,58 +272,6 @@ export default function Home() {
           </div>
         </section>
 
-        {/* ── FEATURED PLAYER ───────────────────────────────────────────── */}
-        {featured && (
-          <section style={{ marginBottom: 48 }} className="fade-up">
-            <div style={{ fontSize: 10, fontWeight: 700, fontFamily: 'var(--font-mono)', letterSpacing: 2, textTransform: 'uppercase', opacity: 0.4, marginBottom: 14 }}>
-              Player of the Day
-            </div>
-            <Link href={`/player/${featured.player_id}`} style={{ textDecoration: 'none', color: 'inherit' }}>
-              <div
-                className="featured-card"
-                style={{
-                  display: 'flex', alignItems: 'center', gap: 16,
-                  padding: '16px 20px', borderRadius: 10,
-                  border: `1.5px solid ${posColor}44`,
-                  background: `linear-gradient(135deg, ${posColor}0d 0%, color-mix(in srgb, var(--navbar) 10%, transparent) 100%)`,
-                  cursor: 'pointer', position: 'relative', overflow: 'hidden',
-                }}
-              >
-                <div style={{ position: 'absolute', left: 0, top: 0, bottom: 0, width: 4, background: posColor, borderRadius: '10px 0 0 10px' }} />
-                <div style={{
-                  width: 56, height: 56, borderRadius: '50%', overflow: 'hidden',
-                  border: `2px solid ${posColor}`, flexShrink: 0,
-                  background: 'color-mix(in srgb, var(--navbar) 30%, transparent)',
-                }}>
-                  {featured.headshot ? (
-                    <img src={featured.headshot} alt={featured.player_name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                  ) : (
-                    <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 22, opacity: 0.3 }}>👤</div>
-                  )}
-                </div>
-                <div style={{ flex: 1 }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
-                    <span style={{ fontWeight: 700, fontSize: 15 }}>{featured.player_name}</span>
-                    {featured.position && (
-                      <span style={{
-                        background: `${posColor}18`, color: posColor,
-                        border: `1px solid ${posColor}44`,
-                        borderRadius: 5, padding: '2px 7px',
-                        fontSize: 10, fontWeight: 700, fontFamily: 'var(--font-mono)', letterSpacing: 1,
-                      }}>{featured.position}</span>
-                    )}
-                  </div>
-                  {featured.school && (
-                    <div style={{ fontSize: 12, opacity: 0.45, fontFamily: 'var(--font-mono)' }}>{featured.school}</div>
-                  )}
-                </div>
-                <div style={{ fontSize: 13, fontFamily: 'var(--font-mono)', opacity: 0.5, flexShrink: 0 }}>
-                  View Profile →
-                </div>
-              </div>
-            </Link>
-          </section>
-        )}
 
         {/* ── FORMER PROJECTS ───────────────────────────────────────────── */}
         <section className="fade-up">
