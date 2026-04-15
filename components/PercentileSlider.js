@@ -1,6 +1,15 @@
+import { useEffect, useState } from 'react';
+
 export default function PercentileSlider({ label, value, raw }) {
   const pct = Math.round(value); // already in 0–100
   const barWidth = 225;
+  const [animated, setAnimated] = useState(false);
+
+  // Trigger animation after mount so bar fills in visibly
+  useEffect(() => {
+    const t = setTimeout(() => setAnimated(true), 50);
+    return () => clearTimeout(t);
+  }, [pct]);
 
   const getColor = (percentile) => {
     if (percentile >= 80) return 'bg-red-500';
@@ -11,7 +20,7 @@ export default function PercentileSlider({ label, value, raw }) {
   };
 
   return (
-    <div className="flex items-center mb-4">
+    <div className="flex items-center mb-2">
       {/* Stat Name */}
       <div className="w-64 text-sm text-right pr-4 font-medium text-gray-700">
         {label}
@@ -22,7 +31,10 @@ export default function PercentileSlider({ label, value, raw }) {
         {/* Filled Portion */}
         <div
           className={`h-5 rounded ${getColor(pct)}`}
-          style={{ width: `${pct}%`, transition: 'width 0.3s ease' }}
+          style={{
+            width: animated ? `${pct}%` : '0%',
+            transition: 'width 0.5s ease',
+          }}
         />
 
         {/* Tick Marks */}
@@ -38,17 +50,14 @@ export default function PercentileSlider({ label, value, raw }) {
         <div
           className="absolute top-1/2 -translate-y-1/2 w-6 h-6 rounded-full border-2 border-white flex items-center justify-center text-xs font-bold text-white"
           style={{
-            left: `calc(${pct}% - 12px)`,
+            left: animated ? `calc(${pct}% - 12px)` : '-12px',
+            transition: 'left 0.5s ease',
             backgroundColor:
-              pct >= 80
-                ? '#ef4444'
-                : pct >= 60
-                ? '#fca5a5'
-                : pct >= 40
-                ? '#d1d5db'
-                : pct >= 20
-                ? '#93c5fd'
-                : '#3b82f6',
+              pct >= 80 ? '#ef4444'
+              : pct >= 60 ? '#fca5a5'
+              : pct >= 40 ? '#d1d5db'
+              : pct >= 20 ? '#93c5fd'
+              : '#3b82f6',
           }}
         >
           {pct}
@@ -62,4 +71,3 @@ export default function PercentileSlider({ label, value, raw }) {
     </div>
   );
 }
-

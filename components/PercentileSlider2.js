@@ -1,6 +1,15 @@
 // components/PercentileSlider2.js
+import { useEffect, useState } from 'react';
 
 export default function PercentileSlider2({ label, ppp, percentiles }) {
+  const [animated, setAnimated] = useState(false);
+
+  useEffect(() => {
+    setAnimated(false);
+    const t = setTimeout(() => setAnimated(true), 50);
+    return () => clearTimeout(t);
+  }, [percentiles]);
+
   const getColor = (value) => {
     if (value >= 80) return 'bg-red-500';
     if (value >= 60) return 'bg-red-300';
@@ -9,7 +18,7 @@ export default function PercentileSlider2({ label, ppp, percentiles }) {
     return 'bg-blue-500';
   };
 
-  const barWidth = 150; // Make narrower if 4 bars in row
+  const barWidth = 150;
 
   return (
     <div className="flex items-center mb-2">
@@ -20,7 +29,7 @@ export default function PercentileSlider2({ label, ppp, percentiles }) {
 
       {/* 4 Percentile Bars */}
       {percentiles.map((pct, i) => {
-        const value = Math.round((pct || 0) * 100); // ensure numeric
+        const value = Math.round((pct || 0) * 100);
         return (
           <div
             key={i}
@@ -30,24 +39,24 @@ export default function PercentileSlider2({ label, ppp, percentiles }) {
             {/* Filled Bar */}
             <div
               className={`h-5 rounded ${getColor(value)}`}
-              style={{ width: `${value}%`, transition: 'width 0.3s ease' }}
+              style={{
+                width: animated ? `${value}%` : '0%',
+                transition: 'width 0.5s ease',
+              }}
             />
 
             {/* Bubble */}
             <div
               className="absolute top-1/2 -translate-y-1/2 w-6 h-6 rounded-full border-2 border-white flex items-center justify-center text-xs font-bold text-white"
               style={{
-                left: `calc(${value}% - 12px)`,
+                left: animated ? `calc(${value}% - 12px)` : '-12px',
+                transition: 'left 0.5s ease',
                 backgroundColor:
-                  value >= 80
-                    ? '#ef4444'
-                    : value >= 60
-                    ? '#fca5a5'
-                    : value >= 40
-                    ? '#d1d5db'
-                    : value >= 20
-                    ? '#93c5fd'
-                    : '#3b82f6',
+                  value >= 80 ? '#ef4444'
+                  : value >= 60 ? '#fca5a5'
+                  : value >= 40 ? '#d1d5db'
+                  : value >= 20 ? '#93c5fd'
+                  : '#3b82f6',
               }}
             >
               {isNaN(value) ? '–' : value}
