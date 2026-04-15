@@ -1,6 +1,5 @@
 // pages/players/[id].js
 
-
 import { useRouter } from 'next/router';
 import { useEffect, useState } from 'react';
 import { supabase } from '../../lib/supabaseClient';
@@ -432,7 +431,7 @@ export default function PlayerPage() {
 
             {/* Back arrow + Headshot stacked */}
             <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8, flexShrink: 0 }}>
-              <a
+              <Link
                 href="/player"
                 style={{
                   display: 'inline-flex', alignItems: 'center', gap: 4,
@@ -444,7 +443,7 @@ export default function PlayerPage() {
                 onMouseLeave={e => e.currentTarget.style.opacity = 0.45}
               >
                 ← Players
-              </a>
+              </Link>
               <img
                 src={headshotUrl || '/default-headshot.png'}
                 alt={playerInfo.player_name}
