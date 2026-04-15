@@ -1,5 +1,6 @@
 // pages/players/[id].js
 
+
 import { useRouter } from 'next/router';
 import { useEffect, useState } from 'react';
 import { supabase } from '../../lib/supabaseClient';
@@ -405,6 +406,30 @@ export default function PlayerPage() {
       `}</style>
 
       <div style={{ maxWidth: 1400, margin: '0 auto', padding: '28px 20px' }}>
+
+        {/* ── BACK BUTTON ──────────────────────────────────────────────── */}
+        <div style={{ marginBottom: 16 }}>
+          <a
+            href="/players"
+            style={{
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: 6,
+              fontSize: 12,
+              fontFamily: 'var(--font-mono)',
+              fontWeight: 700,
+              letterSpacing: 0.5,
+              color: 'var(--foreground)',
+              textDecoration: 'none',
+              opacity: 0.5,
+              transition: 'opacity 0.15s',
+            }}
+            onMouseEnter={e => e.currentTarget.style.opacity = 1}
+            onMouseLeave={e => e.currentTarget.style.opacity = 0.5}
+          >
+            ← Players
+          </a>
+        </div>
 
         {/* ── PLAYER HEADER ─────────────────────────────────────────────── */}
         {playerInfo && (
