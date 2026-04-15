@@ -110,6 +110,86 @@ export default function Home() {
           </p>
         </div>
 
+        {/* ── ABOUT ME ──────────────────────────────────────────────────── */}
+        <section style={{ marginBottom: 48 }} className="fade-up">
+          <div style={{ fontSize: 10, fontWeight: 700, fontFamily: 'var(--font-mono)', letterSpacing: 2, textTransform: 'uppercase', opacity: 0.4, marginBottom: 14 }}>
+            About Me
+          </div>
+          <div style={{
+            display: 'flex', gap: 20, alignItems: 'flex-start', flexWrap: 'wrap',
+            padding: '20px 24px', borderRadius: 10,
+            border: '1.5px solid color-mix(in srgb, var(--navbar) 40%, transparent)',
+            background: 'color-mix(in srgb, var(--navbar) 8%, transparent)',
+          }}>
+            <img
+              src="/brian.png"
+              alt="Brian Papiernik"
+              style={{ width: 100, height: 100, borderRadius: '50%', objectFit: 'cover', border: '2px solid color-mix(in srgb, var(--navbar) 60%, transparent)', flexShrink: 0 }}
+            />
+            <div style={{ flex: '1 1 280px' }}>
+              <p style={{ margin: '0 0 12px', fontSize: 14, lineHeight: 1.8, opacity: 0.8 }}>
+                My name is <strong>Brian Papiernik</strong> — a sports data scientist with experience across baseball, basketball, and multi-sport performance analysis.
+                I&apos;ve worked as a Baseball Technology Operator for the <strong>Tampa Bay Rays</strong>, a Baseball Student Manager with <strong>Notre Dame Baseball</strong>,
+                and hold a <strong>Master&apos;s degree in Sports Analytics from Notre Dame</strong>.
+              </p>
+              <p style={{ margin: '0 0 16px', fontSize: 14, lineHeight: 1.8, opacity: 0.8 }}>
+                I specialize in building end-to-end analytics pipelines, predictive models, and interactive tools for evaluating players and strategies.
+                CourtViz is where I bring together my passion for sports, data, and clean design.
+              </p>
+              {/* Resume button */}
+              <a
+                href="/Brian G Papiernik - 2025 Sports Resume.pdf"
+                download
+                className="resume-btn"
+                style={{
+                  display: 'inline-flex', alignItems: 'center', gap: 6,
+                  background: 'var(--navbar)', color: 'var(--foreground)',
+                  border: 'none', borderRadius: 7, padding: '8px 18px',
+                  fontSize: 12, fontWeight: 700, fontFamily: 'var(--font-mono)',
+                  letterSpacing: 0.5, textDecoration: 'none', cursor: 'pointer',
+                  transition: 'opacity 0.15s',
+                }}
+              >
+                ↓ Download Resume
+              </a>
+            </div>
+          </div>
+        </section>
+
+        {/* ── ABOUT COURTVIZ ────────────────────────────────────────────── */}
+        <section style={{ marginBottom: 48 }} className="fade-up">
+          <div style={{ fontSize: 10, fontWeight: 700, fontFamily: 'var(--font-mono)', letterSpacing: 2, textTransform: 'uppercase', opacity: 0.4, marginBottom: 14 }}>
+            About CourtViz
+          </div>
+          <div style={{
+            padding: '20px 24px', borderRadius: 10,
+            border: '1.5px solid color-mix(in srgb, var(--navbar) 40%, transparent)',
+            background: 'color-mix(in srgb, var(--navbar) 8%, transparent)',
+          }}>
+            <p style={{ margin: '0 0 12px', fontSize: 14, lineHeight: 1.8, opacity: 0.8 }}>
+              CourtViz was created as a sports analytics project to deliver powerful insights across all levels of sports and competition.
+              The first step was launching a full-stack website to showcase the entire analytics pipeline — from back-end data collection and storage to front-end interactive visuals.
+            </p>
+            <p style={{ margin: '0 0 16px', fontSize: 14, lineHeight: 1.8, opacity: 0.8 }}>
+              Features include dynamic player dashboards and a Player Finder tool that helps identify undervalued players and uncover strengths and weaknesses based on data-driven metrics.
+              The vision is to expand across multiple sports while refining tools that support performance analysis, roster construction, and scouting.
+            </p>
+
+            {/* Tech stack badges */}
+            <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+              {TECH.map(t => (
+                <span key={t} style={{
+                  background: 'color-mix(in srgb, var(--navbar) 25%, transparent)',
+                  border: '1px solid color-mix(in srgb, var(--navbar) 50%, transparent)',
+                  borderRadius: 20, padding: '3px 12px',
+                  fontSize: 11, fontFamily: 'var(--font-mono)', fontWeight: 700,
+                  letterSpacing: 0.5,
+                }}>{t}</span>
+              ))}
+            </div>
+          </div>
+        </section>
+
         {/* ── TOOL CARDS ────────────────────────────────────────────────── */}
         <section style={{ marginBottom: 48 }} className="fade-up" >
           <div style={{ fontSize: 10, fontWeight: 700, fontFamily: 'var(--font-mono)', letterSpacing: 2, textTransform: 'uppercase', opacity: 0.4, marginBottom: 14 }}>
@@ -189,86 +269,6 @@ export default function Home() {
             </Link>
           </section>
         )}
-
-        {/* ── ABOUT COURTVIZ ────────────────────────────────────────────── */}
-        <section style={{ marginBottom: 48 }} className="fade-up">
-          <div style={{ fontSize: 10, fontWeight: 700, fontFamily: 'var(--font-mono)', letterSpacing: 2, textTransform: 'uppercase', opacity: 0.4, marginBottom: 14 }}>
-            About CourtViz
-          </div>
-          <div style={{
-            padding: '20px 24px', borderRadius: 10,
-            border: '1.5px solid color-mix(in srgb, var(--navbar) 40%, transparent)',
-            background: 'color-mix(in srgb, var(--navbar) 8%, transparent)',
-          }}>
-            <p style={{ margin: '0 0 12px', fontSize: 14, lineHeight: 1.8, opacity: 0.8 }}>
-              CourtViz was created as a sports analytics project to deliver powerful insights across all levels of sports and competition.
-              The first step was launching a full-stack website to showcase the entire analytics pipeline — from back-end data collection and storage to front-end interactive visuals.
-            </p>
-            <p style={{ margin: '0 0 16px', fontSize: 14, lineHeight: 1.8, opacity: 0.8 }}>
-              Features include dynamic player dashboards and a Player Finder tool that helps identify undervalued players and uncover strengths and weaknesses based on data-driven metrics.
-              The vision is to expand across multiple sports while refining tools that support performance analysis, roster construction, and scouting.
-            </p>
-
-            {/* Tech stack badges */}
-            <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-              {TECH.map(t => (
-                <span key={t} style={{
-                  background: 'color-mix(in srgb, var(--navbar) 25%, transparent)',
-                  border: '1px solid color-mix(in srgb, var(--navbar) 50%, transparent)',
-                  borderRadius: 20, padding: '3px 12px',
-                  fontSize: 11, fontFamily: 'var(--font-mono)', fontWeight: 700,
-                  letterSpacing: 0.5,
-                }}>{t}</span>
-              ))}
-            </div>
-          </div>
-        </section>
-
-        {/* ── ABOUT ME ──────────────────────────────────────────────────── */}
-        <section style={{ marginBottom: 48 }} className="fade-up">
-          <div style={{ fontSize: 10, fontWeight: 700, fontFamily: 'var(--font-mono)', letterSpacing: 2, textTransform: 'uppercase', opacity: 0.4, marginBottom: 14 }}>
-            About Me
-          </div>
-          <div style={{
-            display: 'flex', gap: 20, alignItems: 'flex-start', flexWrap: 'wrap',
-            padding: '20px 24px', borderRadius: 10,
-            border: '1.5px solid color-mix(in srgb, var(--navbar) 40%, transparent)',
-            background: 'color-mix(in srgb, var(--navbar) 8%, transparent)',
-          }}>
-            <img
-              src="/brian.png"
-              alt="Brian Papiernik"
-              style={{ width: 100, height: 100, borderRadius: '50%', objectFit: 'cover', border: '2px solid color-mix(in srgb, var(--navbar) 60%, transparent)', flexShrink: 0 }}
-            />
-            <div style={{ flex: '1 1 280px' }}>
-              <p style={{ margin: '0 0 12px', fontSize: 14, lineHeight: 1.8, opacity: 0.8 }}>
-                My name is <strong>Brian Papiernik</strong> — a sports data scientist with experience across baseball, basketball, and multi-sport performance analysis.
-                I&apos;ve worked as a Baseball Technology Operator for the <strong>Tampa Bay Rays</strong>, a Baseball Student Manager with <strong>Notre Dame Baseball</strong>,
-                and hold a <strong>Master&apos;s degree in Sports Analytics from Notre Dame</strong>.
-              </p>
-              <p style={{ margin: '0 0 16px', fontSize: 14, lineHeight: 1.8, opacity: 0.8 }}>
-                I specialize in building end-to-end analytics pipelines, predictive models, and interactive tools for evaluating players and strategies.
-                CourtViz is where I bring together my passion for sports, data, and clean design.
-              </p>
-              {/* Resume button */}
-              <a
-                href="/Brian G Papiernik - 2025 Sports Resume.pdf"
-                download
-                className="resume-btn"
-                style={{
-                  display: 'inline-flex', alignItems: 'center', gap: 6,
-                  background: 'var(--navbar)', color: 'var(--foreground)',
-                  border: 'none', borderRadius: 7, padding: '8px 18px',
-                  fontSize: 12, fontWeight: 700, fontFamily: 'var(--font-mono)',
-                  letterSpacing: 0.5, textDecoration: 'none', cursor: 'pointer',
-                  transition: 'opacity 0.15s',
-                }}
-              >
-                ↓ Download Resume
-              </a>
-            </div>
-          </div>
-        </section>
 
         {/* ── FORMER PROJECTS ───────────────────────────────────────────── */}
         <section className="fade-up">
