@@ -23,13 +23,13 @@ export default function ShotChart({ bins, playerName }) {
   const shots = useMemo(() => {
     if (!bins || bins.length === 0) return [];
     return bins
-      .filter(d => d.FREQ_PCT >= 0.001 && d.FGA >= 2)
+      .filter(d => d.FREQ_PCT >= 0.001 && d.player_total_shots >= 2)
       .map(d => {
         const x    = d.HEX_X * 0.5;  // 5 tenths-of-foot bins → feet
         const y    = d.HEX_Y * 0.5;
         const dist  = Math.sqrt(x * x + y * y);
         const angle = Math.atan2(x, y) * (180 / Math.PI);
-        return { angle, dist, fgDiff: d.FG_PCT_DIFF, freq: d.FREQ_PCT, fga: d.FGA, fgPct: d.FG_PCT };
+        return { angle, dist, fgDiff: d.FG_PCT_DIFF, freq: d.FREQ_PCT, fga: d.player_total_shots, fgPct: d.PLAYER_FG_PCT };
       })
       .filter(d => d.dist <= 35 && Math.abs(d.angle) <= 95);
   }, [bins]);
