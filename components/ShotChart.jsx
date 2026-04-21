@@ -20,91 +20,97 @@ const COURT_W = 50;   // -25 to +25
 const COURT_H = 47.5; // -4.75 to 42.75
 
 // ── Draw NBA half-court ───────────────────────────────────────────────────────
-// sx maps feet → SVG x (left/right)
-// sy maps feet → SVG y  (basket=0 at BOTTOM, halfcourt=42.25 at TOP)
+// Translated directly from working Plotly court (tenths-of-feet ÷ 10 = feet)
+// sx: feet → SVG x,  sy: feet → SVG y (basket at bottom, halfcourt at top)
 function drawCourt(g, sx, sy, color = '#9ca3af', lw = 1.2) {
   const cx = x => sx(x);
   const cy = y => sy(y);
 
-  // Helper: arc centered at (ox, oy) in court-feet, sweeping angles a1→a2
-  // Angles follow standard math convention (0=right, PI/2=up in court space)
-  // Because sy flips y, sin terms need negating to draw upward arcs correctly
-  const arc = (ox, oy, r, a1, a2, steps = 80) => {
+  // Arc helper: center (ox,oy) in feet, radius r in feet, angles in degrees
+  // Plotly used degrees so we keep that convention here for easy comparison
+  const arc = (ox, oy, rx, ry, deg1, deg2, steps = 100) => {
     const pts = d3.range(steps).map(i => {
-      const a = a1 + (a2 - a1) * i / (steps - 1);
-      return [cx(ox + r * Math.cos(a)), cy(oy + r * Math.sin(a))];
+      const deg = deg1 + (deg2 - deg1) * i / (steps - 1);
+      const rad = deg * Math.PI / 180;
+      return [cx(ox + rx * Math.cos(rad)), cy(oy + ry * Math.sin(rad))];
     });
     return 'M ' + pts.map(p => p.join(',')).join(' L ');
   };
 
-  // Outer court bounds
+  // Outer bounds: x0=-250,y0=-47.5,x1=250,y1=422.5 (÷10 = -25,-4.75,25,42.25)
   g.append('rect')
     .attr('x', cx(-25)).attr('y', cy(42.25))
     .attr('width', cx(25) - cx(-25))
     .attr('height', cy(-4.75) - cy(42.25))
     .attr('fill', 'none').attr('stroke', color).attr('stroke-width', lw);
 
-  // Paint (key) — outer box
+  // Paint outer: x0=-80,y0=-47.5,x1=80,y1=142.5 → -8,-4.75,8,14.25
   g.append('rect')
-    .attr('x', cx(-8)).attr('y', cy(19))
+    .attr('x', cx(-8)).attr('y', cy(14.25))
     .attr('width', cx(8) - cx(-8))
-    .attr('height', cy(-4.75) - cy(19))
+    .attr('height', cy(-4.75) - cy(14.25))
     .attr('fill', 'none').attr('stroke', color).attr('stroke-width', lw);
 
-  // Paint inner box
+  // Paint inner: x0=-60,y0=-47.5,x1=60,y1=142.5 → -6,-4.75,6,14.25
   g.append('rect')
-    .attr('x', cx(-6)).attr('y', cy(19))
+    .attr('x', cx(-6)).attr('y', cy(14.25))
     .attr('width', cx(6) - cx(-6))
-    .attr('height', cy(-4.75) - cy(19))
+    .attr('height', cy(-4.75) - cy(14.25))
     .attr('fill', 'none').attr('stroke', color).attr('stroke-width', lw);
 
-  // Backboard
+  // Backboard: x0=-30,y0=-8.5,x1=30,y1=-7.5 → -3,-0.85,3,-0.75
   g.append('line')
     .attr('x1', cx(-3)).attr('y1', cy(-0.75))
     .attr('x2', cx(3)).attr('y2', cy(-0.75))
     .attr('stroke', color).attr('stroke-width', lw);
 
-  // Hoop circle
+  // Hoop: circle x0=-7.5,y0=-7.5,x1=7.5,y1=7.5 → radius=0.75ft
   g.append('circle')
     .attr('cx', cx(0)).attr('cy', cy(0))
     .attr('r', Math.abs(cx(0.75) - cx(0)))
     .attr('fill', 'none').attr('stroke', color).attr('stroke-width', lw);
 
-  // Restricted area arc (4ft radius, basket center, upper half)
+  // Restricted arc: center(0,0) width=80,height=80 → radius=4ft, 0→180°
   g.append('path')
-    .attr('d', arc(0, 0, 4, 0, Math.PI))
+    .attr('d', arc(0, 0, 4, 4, 0, 180))
     .attr('fill', 'none').attr('stroke', color).attr('stroke-width', lw);
 
-  // Free throw circle — solid top half
+  // Free throw top: center(0,14.25) width=120,height=120 → radius=6ft, 0→180°
   g.append('path')
-    .attr('d', arc(0, 19, 6, 0, Math.PI))
+    .attr('d', arc(0, 14.25, 6, 6, 0, 180))
     .attr('fill', 'none').attr('stroke', color).attr('stroke-width', lw);
 
-  // Free throw circle — dashed bottom half
+  // Free throw bottom dashed: 180→0°
   g.append('path')
-    .attr('d', arc(0, 19, 6, Math.PI, 2 * Math.PI))
+    .attr('d', arc(0, 14.25, 6, 6, 180, 360))
     .attr('fill', 'none').attr('stroke', color).attr('stroke-width', lw)
     .attr('stroke-dasharray', '4,3');
 
-  // Corner three lines
+  // Corner three left: x0=-220,y0=-47.5,x1=-220,y1=92.5 → x=-22, y=-4.75 to 9.25
   g.append('line')
     .attr('x1', cx(-22)).attr('y1', cy(-4.75))
-    .attr('x2', cx(-22)).attr('y2', cy(7.5))
+    .attr('x2', cx(-22)).attr('y2', cy(9.25))
     .attr('stroke', color).attr('stroke-width', lw);
+
+  // Corner three right
   g.append('line')
     .attr('x1', cx(22)).attr('y1', cy(-4.75))
-    .attr('x2', cx(22)).attr('y2', cy(7.5))
+    .attr('x2', cx(22)).attr('y2', cy(9.25))
     .attr('stroke', color).attr('stroke-width', lw);
 
-  // 3PT arc — from corner angle to corner angle through the top
-  const cornerAngle = Math.asin(22 / 23.75);
+  // 3PT arc: center(0,0) width=475,height=475 → radius=23.75ft, 22°→158°
   g.append('path')
-    .attr('d', arc(0, 0, 23.75, cornerAngle, Math.PI - cornerAngle))
+    .attr('d', arc(0, 0, 23.75, 23.75, 22, 158))
     .attr('fill', 'none').attr('stroke', color).attr('stroke-width', lw);
 
-  // Half-court outer circle (bottom half only, visible from halfcourt line)
+  // Halfcourt outer: center(0,42.25) width=120,height=120 → radius=6ft, 180→360°
   g.append('path')
-    .attr('d', arc(0, 42.25, 6, Math.PI, 2 * Math.PI))
+    .attr('d', arc(0, 42.25, 6, 6, 180, 360))
+    .attr('fill', 'none').attr('stroke', color).attr('stroke-width', lw);
+
+  // Halfcourt inner: center(0,42.25) width=40,height=40 → radius=2ft, 180→360°
+  g.append('path')
+    .attr('d', arc(0, 42.25, 2, 2, 180, 360))
     .attr('fill', 'none').attr('stroke', color).attr('stroke-width', lw);
 }
 
