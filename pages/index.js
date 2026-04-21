@@ -16,7 +16,7 @@ const TOOLS = [
   { href: '/player',         emoji: '👤', label: 'Players',          desc: 'Browse the full NBA roster with stats, position filters, and search.' },
   { href: '/finder',         emoji: '🔍', label: 'Player Finder',    desc: 'Filter players by percentile thresholds across tracking and synergy stats.' },
   { href: '/simulator',      emoji: '🏀', label: 'CBB Simulator',    desc: 'Simulate college basketball matchups across any season using 100k simulations.' },
-  { href: '/dailymatchupviz',emoji: '📅', label: 'Daily MatchupViz', desc: 'Track today&apos;s games, model picks, official plays, and historic results.' },
+  { href: '/dailymatchupviz',emoji: '📅', label: 'Daily MatchupViz', desc: "Track today's games, model picks, official plays, and historic results." },
   { href: '/heliocentric-leaderboard', emoji: '☀️', label: 'Heliocentric', desc: 'Evaluate offensive decision-making using the Heliocentric Shot Selection metric.' },
 ];
 
@@ -96,73 +96,94 @@ export default function Home() {
       <div style={{ maxWidth: 860, margin: '0 auto', padding: '40px 20px' }}>
 
         {/* ── HERO ──────────────────────────────────────────────────────── */}
-        <div className="fade-up" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 24, marginBottom: 48, flexWrap: 'wrap' }}>
-          {/* Left: logo + tagline */}
-          <div style={{ textAlign: 'left' }}>
-            <img
-              src="/CourtVizLogo.png"
-              alt="CourtViz"
-              style={{ height: 96, width: 'auto', marginBottom: 16, display: 'block' }}
-            />
-            <h1 style={{ fontSize: 32, fontWeight: 700, margin: '0 0 8px', letterSpacing: -0.5 }}>
-              CourtViz
-            </h1>
-            <p style={{ fontSize: 16, opacity: 0.55, margin: 0, maxWidth: 380 }}>
-              Full-stack NBA &amp; CBB analytics — from raw tracking data to interactive dashboards.
-            </p>
+        <div className="fade-up" style={{ marginBottom: 48 }}>
+
+          {/* Top row: logo+tagline left, player of day right */}
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 24, marginBottom: 28, flexWrap: 'wrap' }}>
+            {/* Left: logo + tagline */}
+            <div style={{ textAlign: 'left' }}>
+              <img
+                src="/CourtVizLogo.png"
+                alt="CourtViz"
+                style={{ height: 96, width: 'auto', marginBottom: 16, display: 'block' }}
+              />
+              <h1 style={{ fontSize: 32, fontWeight: 700, margin: '0 0 8px', letterSpacing: -0.5 }}>
+                CourtViz
+              </h1>
+              <p style={{ fontSize: 16, opacity: 0.55, margin: 0, maxWidth: 380 }}>
+                Full-stack NBA &amp; CBB analytics — from raw tracking data to interactive dashboards.
+              </p>
+            </div>
+
+            {/* Right: Player of the Day card */}
+            {featured && (
+              <Link href={`/player/${featured.player_id}`} style={{ textDecoration: 'none', color: 'inherit', flexShrink: 0 }}>
+                <div
+                  className="featured-card"
+                  style={{
+                    width: 220, padding: '16px', borderRadius: 12,
+                    border: `1.5px solid ${posColor}44`,
+                    background: `linear-gradient(135deg, ${posColor}0d 0%, color-mix(in srgb, var(--navbar) 12%, transparent) 100%)`,
+                    cursor: 'pointer', position: 'relative', overflow: 'hidden',
+                  }}
+                >
+                  <div style={{ position: 'absolute', left: 0, top: 0, bottom: 0, width: 4, background: posColor, borderRadius: '12px 0 0 12px' }} />
+                  <div style={{ fontSize: 9, fontWeight: 700, fontFamily: 'var(--font-mono)', letterSpacing: 2, textTransform: 'uppercase', opacity: 0.4, marginBottom: 10 }}>
+                    Player of the Day
+                  </div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 10 }}>
+                    <div style={{
+                      width: 48, height: 48, borderRadius: '50%', overflow: 'hidden',
+                      border: `2px solid ${posColor}`, flexShrink: 0,
+                      background: 'color-mix(in srgb, var(--navbar) 30%, transparent)',
+                    }}>
+                      {featured.headshot ? (
+                        <img src={featured.headshot} alt={featured.player_name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                      ) : (
+                        <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 20, opacity: 0.3 }}>👤</div>
+                      )}
+                    </div>
+                    <div>
+                      <div style={{ fontWeight: 700, fontSize: 13, marginBottom: 3 }}>{featured.player_name}</div>
+                      {featured.position && (
+                        <span style={{
+                          background: `${posColor}18`, color: posColor,
+                          border: `1px solid ${posColor}44`,
+                          borderRadius: 5, padding: '2px 7px',
+                          fontSize: 9, fontWeight: 700, fontFamily: 'var(--font-mono)', letterSpacing: 1,
+                        }}>{featured.position}</span>
+                      )}
+                    </div>
+                  </div>
+                  {featured.school && (
+                    <div style={{ fontSize: 11, opacity: 0.4, fontFamily: 'var(--font-mono)', marginBottom: 10 }}>{featured.school}</div>
+                  )}
+                  <div style={{ fontSize: 11, fontFamily: 'var(--font-mono)', opacity: 0.5 }}>View Profile →</div>
+                </div>
+              </Link>
+            )}
           </div>
 
-          {/* Right: Player of the Day card */}
-          {featured && (
-            <Link href={`/player/${featured.player_id}`} style={{ textDecoration: 'none', color: 'inherit', flexShrink: 0 }}>
-              <div
-                className="featured-card"
-                style={{
-                  width: 220,
-                  padding: '16px',
-                  borderRadius: 12,
-                  border: `1.5px solid ${posColor}44`,
-                  background: `linear-gradient(135deg, ${posColor}0d 0%, color-mix(in srgb, var(--navbar) 12%, transparent) 100%)`,
-                  cursor: 'pointer', position: 'relative', overflow: 'hidden',
-                }}
-              >
-                <div style={{ position: 'absolute', left: 0, top: 0, bottom: 0, width: 4, background: posColor, borderRadius: '12px 0 0 12px' }} />
-                <div style={{ fontSize: 9, fontWeight: 700, fontFamily: 'var(--font-mono)', letterSpacing: 2, textTransform: 'uppercase', opacity: 0.4, marginBottom: 10 }}>
-                  Player of the Day
+          {/* Tool cards — full width below the top row */}
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: 10 }}>
+            {TOOLS.map(tool => (
+              <Link key={tool.href} href={tool.href} style={{ textDecoration: 'none', color: 'inherit' }}>
+                <div
+                  className="tool-card"
+                  style={{
+                    padding: '12px 14px', borderRadius: 10,
+                    border: '1.5px solid color-mix(in srgb, var(--navbar) 45%, transparent)',
+                    background: 'color-mix(in srgb, var(--navbar) 8%, transparent)',
+                    cursor: 'pointer', height: '100%',
+                  }}
+                >
+                  <div style={{ fontSize: 18, marginBottom: 5 }}>{tool.emoji}</div>
+                  <div style={{ fontWeight: 700, fontSize: 13, marginBottom: 3 }}>{tool.label}</div>
+                  <div style={{ fontSize: 11, opacity: 0.5, lineHeight: 1.5 }}>{tool.desc}</div>
                 </div>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 10 }}>
-                  <div style={{
-                    width: 48, height: 48, borderRadius: '50%', overflow: 'hidden',
-                    border: `2px solid ${posColor}`, flexShrink: 0,
-                    background: 'color-mix(in srgb, var(--navbar) 30%, transparent)',
-                  }}>
-                    {featured.headshot ? (
-                      <img src={featured.headshot} alt={featured.player_name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                    ) : (
-                      <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 20, opacity: 0.3 }}>👤</div>
-                    )}
-                  </div>
-                  <div>
-                    <div style={{ fontWeight: 700, fontSize: 13, marginBottom: 3 }}>{featured.player_name}</div>
-                    {featured.position && (
-                      <span style={{
-                        background: `${posColor}18`, color: posColor,
-                        border: `1px solid ${posColor}44`,
-                        borderRadius: 5, padding: '2px 7px',
-                        fontSize: 9, fontWeight: 700, fontFamily: 'var(--font-mono)', letterSpacing: 1,
-                      }}>{featured.position}</span>
-                    )}
-                  </div>
-                </div>
-                {featured.school && (
-                  <div style={{ fontSize: 11, opacity: 0.4, fontFamily: 'var(--font-mono)', marginBottom: 10 }}>{featured.school}</div>
-                )}
-                <div style={{ fontSize: 11, fontFamily: 'var(--font-mono)', opacity: 0.5 }}>
-                  View Profile →
-                </div>
-              </div>
-            </Link>
-          )}
+              </Link>
+            ))}
+          </div>
         </div>
 
         {/* ── ABOUT ME ──────────────────────────────────────────────────── */}
@@ -245,32 +266,6 @@ export default function Home() {
           </div>
         </section>
 
-        {/* ── TOOL CARDS ────────────────────────────────────────────────── */}
-        <section style={{ marginBottom: 48 }} className="fade-up" >
-          <div style={{ fontSize: 10, fontWeight: 700, fontFamily: 'var(--font-mono)', letterSpacing: 2, textTransform: 'uppercase', opacity: 0.4, marginBottom: 14 }}>
-            Explore the Tools
-          </div>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(240px, 1fr))', gap: 12 }}>
-            {TOOLS.map(tool => (
-              <Link key={tool.href} href={tool.href} style={{ textDecoration: 'none', color: 'inherit' }}>
-                <div
-                  className="tool-card"
-                  style={{
-                    padding: '14px 16px',
-                    borderRadius: 10,
-                    border: '1.5px solid color-mix(in srgb, var(--navbar) 45%, transparent)',
-                    background: 'color-mix(in srgb, var(--navbar) 8%, transparent)',
-                    cursor: 'pointer',
-                  }}
-                >
-                  <div style={{ fontSize: 20, marginBottom: 6 }}>{tool.emoji}</div>
-                  <div style={{ fontWeight: 700, fontSize: 14, marginBottom: 4 }}>{tool.label}</div>
-                  <div style={{ fontSize: 12, opacity: 0.5, lineHeight: 1.5 }}>{tool.desc}</div>
-                </div>
-              </Link>
-            ))}
-          </div>
-        </section>
 
 
         {/* ── FORMER PROJECTS ───────────────────────────────────────────── */}
