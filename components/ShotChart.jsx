@@ -134,8 +134,8 @@ export default function ShotChart({ bins }) {
     return bins
       .filter(d => d.FREQ_PCT >= 0.001 && d.FGA >= 2)
       .map(d => ({
-        x:      sx(d.HEX_X * 0.5),   // bin index → feet
-        y:      sy(d.HEX_Y * 0.5),
+        x:      sx(d.HEX_X),  // already in feet from new pipeline
+        y:      sy(d.HEX_Y),
         fgDiff: d.FG_PCT_DIFF,
         freq:   d.FREQ_PCT,
         fga:    d.FGA,
