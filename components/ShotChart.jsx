@@ -20,25 +20,38 @@ const COURT_W = 50;   // -25 to +25
 const COURT_H = 47.5; // -4.75 to 42.75
 
 // ── Draw NBA half-court ───────────────────────────────────────────────────────
+// sx maps feet → SVG x (left/right)
+// sy maps feet → SVG y  (basket=0 at BOTTOM, halfcourt=42.25 at TOP)
 function drawCourt(g, sx, sy, color = '#9ca3af', lw = 1.2) {
   const cx = x => sx(x);
   const cy = y => sy(y);
 
-  // Outer bounds
+  // Helper: arc centered at (ox, oy) in court-feet, sweeping angles a1→a2
+  // Angles follow standard math convention (0=right, PI/2=up in court space)
+  // Because sy flips y, sin terms need negating to draw upward arcs correctly
+  const arc = (ox, oy, r, a1, a2, steps = 80) => {
+    const pts = d3.range(steps).map(i => {
+      const a = a1 + (a2 - a1) * i / (steps - 1);
+      return [cx(ox + r * Math.cos(a)), cy(oy + r * Math.sin(a))];
+    });
+    return 'M ' + pts.map(p => p.join(',')).join(' L ');
+  };
+
+  // Outer court bounds
   g.append('rect')
     .attr('x', cx(-25)).attr('y', cy(42.25))
     .attr('width', cx(25) - cx(-25))
     .attr('height', cy(-4.75) - cy(42.25))
     .attr('fill', 'none').attr('stroke', color).attr('stroke-width', lw);
 
-  // Paint outer
+  // Paint (key) — outer box
   g.append('rect')
     .attr('x', cx(-8)).attr('y', cy(19))
     .attr('width', cx(8) - cx(-8))
     .attr('height', cy(-4.75) - cy(19))
     .attr('fill', 'none').attr('stroke', color).attr('stroke-width', lw);
 
-  // Paint inner
+  // Paint inner box
   g.append('rect')
     .attr('x', cx(-6)).attr('y', cy(19))
     .attr('width', cx(6) - cx(-6))
@@ -51,51 +64,25 @@ function drawCourt(g, sx, sy, color = '#9ca3af', lw = 1.2) {
     .attr('x2', cx(3)).attr('y2', cy(-0.75))
     .attr('stroke', color).attr('stroke-width', lw);
 
-  // Hoop
+  // Hoop circle
   g.append('circle')
     .attr('cx', cx(0)).attr('cy', cy(0))
     .attr('r', Math.abs(cx(0.75) - cx(0)))
     .attr('fill', 'none').attr('stroke', color).attr('stroke-width', lw);
 
-  // Restricted arc
-  const rArcR = Math.abs(cx(4) - cx(0));
-  const arcPath = (r, a1, a2) => {
-    const pts = d3.range(60).map(i => {
-      const a = a1 + (a2 - a1) * i / 59;
-      return [cx(r * Math.cos(a)), cy(r * Math.sin(a))];
-    });
-    return 'M ' + pts.map(p => p.join(',')).join(' L ');
-  };
+  // Restricted area arc (4ft radius, basket center, upper half)
   g.append('path')
-    .attr('d', arcPath(4, 0, Math.PI))
+    .attr('d', arc(0, 0, 4, 0, Math.PI))
     .attr('fill', 'none').attr('stroke', color).attr('stroke-width', lw);
 
-  // Free throw circle top
+  // Free throw circle — solid top half
   g.append('path')
-    .attr('d', arcPath(6, 0, Math.PI)
-      .replace(/[\d.-]+,[\d.-]+/g, (_, i) => {
-        // shift center to (0, 19)
-        return _;
-      }))
-    .attr('transform', `translate(${cx(0) - cx(0)},${cy(19) - cy(0)})`)
+    .attr('d', arc(0, 19, 6, 0, Math.PI))
     .attr('fill', 'none').attr('stroke', color).attr('stroke-width', lw);
 
-  // Recalculate FT circle properly
-  const ftR = Math.abs(cx(6) - cx(0));
-  const ftCy = cy(19);
-  const ftPtsTop = d3.range(60).map(i => {
-    const a = Math.PI * i / 59;
-    return [cx(6 * Math.cos(a)), ftCy + ftR * Math.sin(a) * -1];
-  });
-  const ftPtsBot = d3.range(60).map(i => {
-    const a = Math.PI * i / 59;
-    return [cx(6 * Math.cos(a)), ftCy + ftR * Math.sin(a)];
-  });
+  // Free throw circle — dashed bottom half
   g.append('path')
-    .attr('d', 'M ' + ftPtsTop.map(p => p.join(',')).join(' L '))
-    .attr('fill', 'none').attr('stroke', color).attr('stroke-width', lw);
-  g.append('path')
-    .attr('d', 'M ' + ftPtsBot.map(p => p.join(',')).join(' L '))
+    .attr('d', arc(0, 19, 6, Math.PI, 2 * Math.PI))
     .attr('fill', 'none').attr('stroke', color).attr('stroke-width', lw)
     .attr('stroke-dasharray', '4,3');
 
@@ -109,24 +96,15 @@ function drawCourt(g, sx, sy, color = '#9ca3af', lw = 1.2) {
     .attr('x2', cx(22)).attr('y2', cy(7.5))
     .attr('stroke', color).attr('stroke-width', lw);
 
-  // 3PT arc
+  // 3PT arc — from corner angle to corner angle through the top
   const cornerAngle = Math.asin(22 / 23.75);
-  const threePts = d3.range(100).map(i => {
-    const a = -cornerAngle + (Math.PI + 2 * cornerAngle) * i / 99;
-    return [cx(23.75 * Math.cos(a)), cy(23.75 * Math.sin(a))];
-  });
   g.append('path')
-    .attr('d', 'M ' + threePts.map(p => p.join(',')).join(' L '))
+    .attr('d', arc(0, 0, 23.75, cornerAngle, Math.PI - cornerAngle))
     .attr('fill', 'none').attr('stroke', color).attr('stroke-width', lw);
 
-  // Halfcourt circle
-  const hcR = Math.abs(cx(6) - cx(0));
-  const hcPts = d3.range(60).map(i => {
-    const a = Math.PI + Math.PI * i / 59;
-    return [cx(6 * Math.cos(a)), cy(42.25 + 6 * Math.sin(a))];
-  });
+  // Half-court outer circle (bottom half only, visible from halfcourt line)
   g.append('path')
-    .attr('d', 'M ' + hcPts.map(p => p.join(',')).join(' L '))
+    .attr('d', arc(0, 42.25, 6, Math.PI, 2 * Math.PI))
     .attr('fill', 'none').attr('stroke', color).attr('stroke-width', lw);
 }
 
@@ -150,8 +128,8 @@ export default function ShotChart({ bins }) {
     return bins
       .filter(d => d.FREQ_PCT >= 0.001 && d.FGA >= 2)
       .map(d => ({
-        x:      sx(d.HEX_X),
-        y:      sy(d.HEX_Y),
+        x:      sx(d.HEX_X * 0.5),   // bin index → feet
+        y:      sy(d.HEX_Y * 0.5),
         fgDiff: d.FG_PCT_DIFF,
         freq:   d.FREQ_PCT,
         fga:    d.FGA,
