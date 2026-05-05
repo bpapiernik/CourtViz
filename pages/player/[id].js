@@ -250,11 +250,12 @@ export default function PlayerPage() {
   const [shotChartSeason, setShotChartSeason]     = useState('');
   const [shotChartBins, setShotChartBins]         = useState([]);
 
-  // ── NEW: Rolling FG% state ────────────────────────────────────────────────
+  // ── Rolling FG% state ─────────────────────────────────────────────────────
   const [rollingShots, setRollingShots]           = useState([]);
   const [rollingSeason, setRollingSeason]         = useState('');
+  const [rollingSeasons, setRollingSeasons]       = useState([]);
 
-  // ── useEffects (all identical to original) ────────────────────────────────
+  // ── useEffects ────────────────────────────────────────────────────────────
   useEffect(() => {
     if (!id) return;
     const fetchPlayerData = async () => {
@@ -359,71 +360,43 @@ export default function PlayerPage() {
     fetchShotChart();
   }, [id, shotChartSeason]);
 
-  // ── NEW: Fetch rolling FG% data ───────────────────────────────────────────
+  // ── Fetch available rolling seasons (distinct, lightweight) ───────────────
   useEffect(() => {
-    if (!id || !selectedSeason) return;
+    if (!id) return;
+    const fetchRollingSeasons = async () => {
+      const { data, error } = await supabase
+        .from('player_shots')
+        .select('SEASON')
+        .eq('PLAYER_ID', id);
+      if (error || !data?.length) return;
+      const unique = [...new Set(data.map(r => r.SEASON))].sort().reverse();
+      setRollingSeasons(unique);
+      setRollingSeason(unique[0] ?? '');
+    };
+    fetchRollingSeasons();
+  }, [id]);
+
+  // ── Fetch rolling FG% data for selected season ────────────────────────────
+  useEffect(() => {
+    if (!id || !rollingSeason) return;
     const fetchRolling = async () => {
-      console.log('[RollingFG] Starting fetch — player_id=%s season=%s', id, selectedSeason);
-      const t0 = performance.now();
-
-      let allRows = [], from = 0, page = 0;
-
+      let allRows = [], from = 0;
       while (true) {
-        page++;
-        console.log('[RollingFG] Page %d – requesting rows %d–%d', page, from, from + 999);
-
         const { data, error } = await supabase
           .from('player_shots')
           .select('SEASON, ZONE_KEY, ZONE_SHOT_NUM, ROLLING_FG_PCT, LEAGUE_FG_PCT')
           .eq('PLAYER_ID', id)
-          .eq('SEASON', selectedSeason)
+          .eq('SEASON', rollingSeason)
           .range(from, from + 999);
-
-        if (error) {
-          console.error('[RollingFG] Supabase error on page %d:', page, error);
-          break;
-        }
-        if (!data?.length) {
-          console.log('[RollingFG] Empty response on page %d – stopping', page);
-          break;
-        }
-
-        console.log('[RollingFG] Page %d returned %d rows (first:', page, data.length, data[0], ')');
+        if (error || !data?.length) break;
         allRows = allRows.concat(data);
-
-        if (data.length < 1000) {
-          console.log('[RollingFG] Last page detected (< 1000 rows) – stopping');
-          break;
-        }
+        if (data.length < 1000) break;
         from += 1000;
       }
-
-      const elapsed = (performance.now() - t0).toFixed(0);
-      console.log('[RollingFG] Done – %d total rows in %dms across %d pages', allRows.length, elapsed, page);
-
-      if (!allRows.length) {
-        console.warn('[RollingFG] No rows returned – check PLAYER_ID, RLS policy, or SEASON value');
-        setRollingShots([]);
-        return;
-      }
-
-      console.log('[RollingFG] Column sample:', Object.keys(allRows[0]));
-
-      const zones = [...new Set(allRows.map(r => r.ZONE_KEY))];
-      console.log('[RollingFG] Zone keys (%d unique):', zones.length, zones);
-
-      const nullPct  = allRows.filter(r => r.ROLLING_FG_PCT == null).length;
-      const nullLeag = allRows.filter(r => r.LEAGUE_FG_PCT  == null).length;
-      if (nullPct)  console.warn('[RollingFG] %d rows have null ROLLING_FG_PCT',  nullPct);
-      if (nullLeag) console.warn('[RollingFG] %d rows have null LEAGUE_FG_PCT',   nullLeag);
-
       setRollingShots(allRows);
-      setRollingSeason(selectedSeason);
-      console.log('[RollingFG] State set – rollingSeason=%s', selectedSeason);
     };
-
     fetchRolling();
-  }, [id, selectedSeason]);
+  }, [id, rollingSeason]);
 
   // ── Derived ───────────────────────────────────────────────────────────────
   const posColor = POSITION_COLORS[playerInfo?.position] || '#94a3b8';
@@ -516,11 +489,11 @@ export default function PlayerPage() {
           </div>
         )}
 
-        {/* ── SYNERGY + SHOT CHART ROW ───────────────────────────────────── */}
+        {/* ── SYNERGY + SHOT CHART + ROLLING FG ROW ─────────────────────── */}
         <div style={{ display: 'flex', gap: 20, marginBottom: 24, flexWrap: 'wrap' }}>
 
           {/* Synergy block */}
-          <div style={{ flex: '1 1 480px', minWidth: 0 }}>
+          <div style={{ flex: '1 1 400px', minWidth: 0 }}>
             <div style={{ ...sectionCardStyle, marginBottom: 12 }}>
               <div style={{ display: 'flex', gap: 16, flexWrap: 'wrap', alignItems: 'flex-end' }}>
                 <div>
@@ -565,7 +538,7 @@ export default function PlayerPage() {
           </div>
 
           {/* Shot chart block */}
-          <div style={{ flex: '1 1 380px', minWidth: 0 }}>
+          <div style={{ flex: '1 1 300px', minWidth: 0 }}>
             <div style={{ ...sectionCardStyle, marginBottom: 12 }}>
               <label style={labelStyle}>Shot Chart Season</label>
               <select className="ctrl-select" value={shotChartSeason}
@@ -583,17 +556,31 @@ export default function PlayerPage() {
               )}
             </div>
           </div>
-        </div>
 
-        {/* ── ROLLING FG% CHART ─────────────────────────────────────────── */}
-        {rollingShots.length > 0 && (
-          <div style={{ ...sectionCardStyle, marginBottom: 24, borderTop: `3px solid ${posColor}` }}>
-            <div style={{ fontSize: 10, fontWeight: 700, fontFamily: 'var(--font-mono)', letterSpacing: 1, textTransform: 'uppercase', opacity: 0.4, marginBottom: 12 }}>
-              20-Shot Rolling FG% by Zone — {shotChartSeason}
+          {/* Rolling FG% block */}
+          <div style={{ flex: '1 1 300px', minWidth: 0 }}>
+            <div style={{ ...sectionCardStyle, marginBottom: 12 }}>
+              <label style={labelStyle}>Rolling FG% Season</label>
+              <select className="ctrl-select" value={rollingSeason}
+                onChange={e => setRollingSeason(e.target.value)} style={selectStyle}>
+                {rollingSeasons.map(s => <option key={s} value={s}>{s}</option>)}
+              </select>
             </div>
-            <RollingFGChart shotData={rollingShots} season={shotChartSeason} />
+            <div style={{ ...sectionCardStyle, borderTop: `3px solid ${posColor}` }}>
+              <div style={{ fontSize: 10, fontWeight: 700, fontFamily: 'var(--font-mono)', letterSpacing: 1, textTransform: 'uppercase', opacity: 0.4, marginBottom: 12 }}>
+                20-Shot Rolling FG% by Zone
+              </div>
+              {rollingShots.length > 0 ? (
+                <RollingFGChart shotData={rollingShots} season={rollingSeason} />
+              ) : (
+                <div style={{ padding: '40px 0', textAlign: 'center', opacity: 0.35, fontSize: 13 }}>
+                  No rolling shot data available.
+                </div>
+              )}
+            </div>
           </div>
-        )}
+
+        </div>
 
         {/* ── PERCENTILE CONTROLS CARD ───────────────────────────────────── */}
         <div style={{ ...sectionCardStyle, marginBottom: 20 }}>
