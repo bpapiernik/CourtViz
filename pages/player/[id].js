@@ -489,11 +489,11 @@ export default function PlayerPage() {
           </div>
         )}
 
-        {/* ── SYNERGY + SHOT CHART + ROLLING FG ROW ─────────────────────── */}
+        {/* ── SYNERGY (left) + SHOT CHART / ROLLING FG stacked (right) ──── */}
         <div style={{ display: 'flex', gap: 20, marginBottom: 24, flexWrap: 'wrap' }}>
 
-          {/* Synergy block */}
-          <div style={{ flex: '1 1 400px', minWidth: 0 }}>
+          {/* ── LEFT: Synergy ─────────────────────────────────────────────── */}
+          <div style={{ flex: '1 1 480px', minWidth: 0 }}>
             <div style={{ ...sectionCardStyle, marginBottom: 12 }}>
               <div style={{ display: 'flex', gap: 16, flexWrap: 'wrap', alignItems: 'flex-end' }}>
                 <div>
@@ -537,49 +537,53 @@ export default function PlayerPage() {
             </div>
           </div>
 
-          {/* Shot chart block */}
-          <div style={{ flex: '1 1 300px', minWidth: 0 }}>
-            <div style={{ ...sectionCardStyle, marginBottom: 12 }}>
-              <label style={labelStyle}>Shot Chart Season</label>
-              <select className="ctrl-select" value={shotChartSeason}
-                onChange={e => setShotChartSeason(e.target.value)} style={selectStyle}>
-                {seasons.map(s => <option key={s} value={s}>{s}</option>)}
-              </select>
-            </div>
-            <div style={{ ...sectionCardStyle, borderTop: `3px solid ${posColor}` }}>
-              {shotChartBins.length > 0 ? (
-                <ShotChart bins={shotChartBins} playerName={playerInfo?.player_name} />
-              ) : (
-                <div style={{ padding: '40px 0', textAlign: 'center', opacity: 0.35, fontSize: 13 }}>
-                  No shot data available for this season.
-                </div>
-              )}
-            </div>
-          </div>
+          {/* ── RIGHT: Shot chart + Rolling FG stacked ────────────────────── */}
+          <div style={{ flex: '1 1 380px', minWidth: 0, display: 'flex', flexDirection: 'column', gap: 20 }}>
 
-          {/* Rolling FG% block */}
-          <div style={{ flex: '1 1 300px', minWidth: 0 }}>
-            <div style={{ ...sectionCardStyle, marginBottom: 12 }}>
-              <label style={labelStyle}>Rolling FG% Season</label>
-              <select className="ctrl-select" value={rollingSeason}
-                onChange={e => setRollingSeason(e.target.value)} style={selectStyle}>
-                {rollingSeasons.map(s => <option key={s} value={s}>{s}</option>)}
-              </select>
-            </div>
-            <div style={{ ...sectionCardStyle, borderTop: `3px solid ${posColor}` }}>
-              <div style={{ fontSize: 10, fontWeight: 700, fontFamily: 'var(--font-mono)', letterSpacing: 1, textTransform: 'uppercase', opacity: 0.4, marginBottom: 12 }}>
-                20-Shot Rolling FG% by Zone
+            {/* Shot chart */}
+            <div>
+              <div style={{ ...sectionCardStyle, marginBottom: 12 }}>
+                <label style={labelStyle}>Shot Chart Season</label>
+                <select className="ctrl-select" value={shotChartSeason}
+                  onChange={e => setShotChartSeason(e.target.value)} style={selectStyle}>
+                  {seasons.map(s => <option key={s} value={s}>{s}</option>)}
+                </select>
               </div>
-              {rollingShots.length > 0 ? (
-                <RollingFGChart shotData={rollingShots} season={rollingSeason} />
-              ) : (
-                <div style={{ padding: '40px 0', textAlign: 'center', opacity: 0.35, fontSize: 13 }}>
-                  No rolling shot data available.
-                </div>
-              )}
+              <div style={{ ...sectionCardStyle, borderTop: `3px solid ${posColor}` }}>
+                {shotChartBins.length > 0 ? (
+                  <ShotChart bins={shotChartBins} playerName={playerInfo?.player_name} />
+                ) : (
+                  <div style={{ padding: '40px 0', textAlign: 'center', opacity: 0.35, fontSize: 13 }}>
+                    No shot data available for this season.
+                  </div>
+                )}
+              </div>
             </div>
-          </div>
 
+            {/* Rolling FG% */}
+            <div>
+              <div style={{ ...sectionCardStyle, marginBottom: 12 }}>
+                <label style={labelStyle}>Rolling FG% Season</label>
+                <select className="ctrl-select" value={rollingSeason}
+                  onChange={e => setRollingSeason(e.target.value)} style={selectStyle}>
+                  {rollingSeasons.map(s => <option key={s} value={s}>{s}</option>)}
+                </select>
+              </div>
+              <div style={{ ...sectionCardStyle, borderTop: `3px solid ${posColor}` }}>
+                <div style={{ fontSize: 10, fontWeight: 700, fontFamily: 'var(--font-mono)', letterSpacing: 1, textTransform: 'uppercase', opacity: 0.4, marginBottom: 12 }}>
+                  20-Shot Rolling FG% by Zone
+                </div>
+                {rollingShots.length > 0 ? (
+                  <RollingFGChart shotData={rollingShots} season={rollingSeason} />
+                ) : (
+                  <div style={{ padding: '40px 0', textAlign: 'center', opacity: 0.35, fontSize: 13 }}>
+                    No rolling shot data available.
+                  </div>
+                )}
+              </div>
+            </div>
+
+          </div>
         </div>
 
         {/* ── PERCENTILE CONTROLS CARD ───────────────────────────────────── */}
