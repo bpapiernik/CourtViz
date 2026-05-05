@@ -368,7 +368,7 @@ export default function PlayerPage() {
         const { data, error } = await supabase
           .from('player_shots')
           .select('SEASON, ZONE_KEY, ZONE_SHOT_NUM, ROLLING_FG_PCT, LEAGUE_FG_PCT')
-          .eq('PLAYER_ID', id)
+          .eq('PLAYER_ID', Number(id))
           .range(from, from + 999);
         if (error || !data?.length) break;
         allRows = allRows.concat(data);
