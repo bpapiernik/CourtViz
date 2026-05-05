@@ -361,7 +361,7 @@ export default function PlayerPage() {
 
   // ── NEW: Fetch rolling FG% data ───────────────────────────────────────────
   useEffect(() => {
-    if (!id || !seasons.length) return;
+    if (!id || !selectedSeason) return;
     const fetchRolling = async () => {
       let allRows = [], from = 0;
       while (true) {
@@ -378,10 +378,10 @@ export default function PlayerPage() {
       setRollingShots(allRows);
       // Default to most recent season
       const availableSeasons = [...new Set(allRows.map(r => r.SEASON))].sort().reverse();
-      setRollingSeason(availableSeasons[0] ?? seasons[0] ?? '');
+      setRollingSeason(availableSeasons[0] ?? selectedSeason ?? '');
     };
     fetchRolling();
-  }, [id, seasons]);
+  }, [id, selectedSeason]);
 
   // ── Derived ───────────────────────────────────────────────────────────────
   const posColor = POSITION_COLORS[playerInfo?.position] || '#94a3b8';
@@ -546,18 +546,10 @@ export default function PlayerPage() {
         {/* ── ROLLING FG% CHART ─────────────────────────────────────────── */}
         {rollingShots.length > 0 && (
           <div style={{ ...sectionCardStyle, marginBottom: 24, borderTop: `3px solid ${posColor}` }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
-              <div style={{ fontSize: 10, fontWeight: 700, fontFamily: 'var(--font-mono)', letterSpacing: 1, textTransform: 'uppercase', opacity: 0.4 }}>
-                20-Shot Rolling FG% by Zone
-              </div>
-              <select className="ctrl-select" value={rollingSeason}
-                onChange={e => setRollingSeason(e.target.value)} style={selectStyle}>
-                {[...new Set(rollingShots.map(r => r.SEASON))].sort().reverse().map(s => (
-                  <option key={s} value={s}>{s}</option>
-                ))}
-              </select>
+            <div style={{ fontSize: 10, fontWeight: 700, fontFamily: 'var(--font-mono)', letterSpacing: 1, textTransform: 'uppercase', opacity: 0.4, marginBottom: 12 }}>
+              20-Shot Rolling FG% by Zone — {shotChartSeason}
             </div>
-            <RollingFGChart shotData={rollingShots} season={rollingSeason} />
+            <RollingFGChart shotData={rollingShots} season={shotChartSeason} />
           </div>
         )}
 
