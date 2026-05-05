@@ -489,84 +489,56 @@ export default function PlayerPage() {
           </div>
         )}
 
-        {/* ── COLUMN 1: Synergy + Rolling FG  |  COLUMN 2: Shot Chart ───── */}
-        <div style={{ display: 'flex', gap: 20, marginBottom: 24, flexWrap: 'wrap' }}>
+        {/* ── 3 COLUMNS: Synergy | Shot Chart | Rolling FG% ─────────────── */}
+        <div style={{ display: 'flex', gap: 20, marginBottom: 24, flexWrap: 'wrap', alignItems: 'flex-start' }}>
 
-          {/* ── LEFT: Synergy + Rolling FG stacked ────────────────────────── */}
-          <div style={{ flex: '1 1 480px', minWidth: 0, display: 'flex', flexDirection: 'column', gap: 20 }}>
-
-            {/* Synergy */}
-            <div>
-              <div style={{ ...sectionCardStyle, marginBottom: 12 }}>
-                <div style={{ display: 'flex', gap: 16, flexWrap: 'wrap', alignItems: 'flex-end' }}>
-                  <div>
-                    <label style={labelStyle}>PlayType Season</label>
-                    <select className="ctrl-select" value={selectedSynergySeason}
-                      onChange={e => setSelectedSynergySeason(e.target.value)} style={selectStyle}>
-                      {[...new Set(synergyRows.map(r => r.SEASON))].map(season => (
-                        <option key={season} value={season}>{season}</option>
-                      ))}
-                    </select>
-                  </div>
-                  <div>
-                    <label style={labelStyle}>Type Group</label>
-                    <select className="ctrl-select" value={selectedTypeGroup}
-                      onChange={e => setSelectedTypeGroup(e.target.value)} style={selectStyle}>
-                      <option value="offensive">Offensive</option>
-                      <option value="defensive">Defensive</option>
-                    </select>
-                  </div>
-                  <div>
-                    <label style={labelStyle}>Team</label>
-                    <select className="ctrl-select" value={selectedTeam}
-                      onChange={e => setSelectedTeam(e.target.value)} style={selectStyle}>
-                      {teamOptions.map(teamId => (
-                        <option key={teamId} value={teamId}>{teamIdToName[teamId] || teamId}</option>
-                      ))}
-                    </select>
-                  </div>
+          {/* Col 1: Synergy — original width */}
+          <div style={{ flex: '1 1 480px', minWidth: 0 }}>
+            <div style={{ ...sectionCardStyle, marginBottom: 12 }}>
+              <div style={{ display: 'flex', gap: 16, flexWrap: 'wrap', alignItems: 'flex-end' }}>
+                <div>
+                  <label style={labelStyle}>PlayType Season</label>
+                  <select className="ctrl-select" value={selectedSynergySeason}
+                    onChange={e => setSelectedSynergySeason(e.target.value)} style={selectStyle}>
+                    {[...new Set(synergyRows.map(r => r.SEASON))].map(season => (
+                      <option key={season} value={season}>{season}</option>
+                    ))}
+                  </select>
                 </div>
-              </div>
-              <div style={{ ...sectionCardStyle, borderTop: `3px solid ${posColor}` }}>
-                <div style={{ fontSize: 10, fontWeight: 700, fontFamily: 'var(--font-mono)', letterSpacing: 1, textTransform: 'uppercase', opacity: 0.4, marginBottom: 12 }}>
-                  Synergy Percentiles — {selectedTypeGroup}
+                <div>
+                  <label style={labelStyle}>Type Group</label>
+                  <select className="ctrl-select" value={selectedTypeGroup}
+                    onChange={e => setSelectedTypeGroup(e.target.value)} style={selectStyle}>
+                    <option value="offensive">Offensive</option>
+                    <option value="defensive">Defensive</option>
+                  </select>
                 </div>
-                {synergyRows
-                  .filter(r => r.SEASON === selectedSynergySeason && r.TYPE_GROUPING === selectedTypeGroup && r.TEAM_ID === parseInt(selectedTeam))
-                  .map(row => (
-                    <PercentileSlider2 key={row.PLAY_TYPE} label={row.PLAY_TYPE} ppp={row.PPP}
-                      percentiles={[row.PERCENTILE, row.PPP_pct_by_age, row.PPP_pct_by_experience, row.PPP_pct_by_position_group]} />
-                  ))}
+                <div>
+                  <label style={labelStyle}>Team</label>
+                  <select className="ctrl-select" value={selectedTeam}
+                    onChange={e => setSelectedTeam(e.target.value)} style={selectStyle}>
+                    {teamOptions.map(teamId => (
+                      <option key={teamId} value={teamId}>{teamIdToName[teamId] || teamId}</option>
+                    ))}
+                  </select>
+                </div>
               </div>
             </div>
-
-            {/* Rolling FG% */}
-            <div>
-              <div style={{ ...sectionCardStyle, marginBottom: 12 }}>
-                <label style={labelStyle}>Rolling FG% Season</label>
-                <select className="ctrl-select" value={rollingSeason}
-                  onChange={e => setRollingSeason(e.target.value)} style={selectStyle}>
-                  {rollingSeasons.map(s => <option key={s} value={s}>{s}</option>)}
-                </select>
+            <div style={{ ...sectionCardStyle, borderTop: `3px solid ${posColor}` }}>
+              <div style={{ fontSize: 10, fontWeight: 700, fontFamily: 'var(--font-mono)', letterSpacing: 1, textTransform: 'uppercase', opacity: 0.4, marginBottom: 12 }}>
+                Synergy Percentiles — {selectedTypeGroup}
               </div>
-              <div style={{ ...sectionCardStyle, borderTop: `3px solid ${posColor}` }}>
-                <div style={{ fontSize: 10, fontWeight: 700, fontFamily: 'var(--font-mono)', letterSpacing: 1, textTransform: 'uppercase', opacity: 0.4, marginBottom: 12 }}>
-                  30-Shot Rolling FG% by Zone
-                </div>
-                {rollingShots.length > 0 ? (
-                  <RollingFGChart shotData={rollingShots} season={rollingSeason} />
-                ) : (
-                  <div style={{ padding: '40px 0', textAlign: 'center', opacity: 0.35, fontSize: 13 }}>
-                    No rolling shot data available.
-                  </div>
-                )}
-              </div>
+              {synergyRows
+                .filter(r => r.SEASON === selectedSynergySeason && r.TYPE_GROUPING === selectedTypeGroup && r.TEAM_ID === parseInt(selectedTeam))
+                .map(row => (
+                  <PercentileSlider2 key={row.PLAY_TYPE} label={row.PLAY_TYPE} ppp={row.PPP}
+                    percentiles={[row.PERCENTILE, row.PPP_pct_by_age, row.PPP_pct_by_experience, row.PPP_pct_by_position_group]} />
+                ))}
             </div>
-
           </div>
 
-          {/* ── RIGHT: Shot chart ─────────────────────────────────────────── */}
-          <div style={{ flex: '1 1 380px', minWidth: 0 }}>
+          {/* Col 2: Shot Chart */}
+          <div style={{ flex: '0 1 340px', minWidth: 0 }}>
             <div style={{ ...sectionCardStyle, marginBottom: 12 }}>
               <label style={labelStyle}>Shot Chart Season</label>
               <select className="ctrl-select" value={shotChartSeason}
@@ -580,6 +552,29 @@ export default function PlayerPage() {
               ) : (
                 <div style={{ padding: '40px 0', textAlign: 'center', opacity: 0.35, fontSize: 13 }}>
                   No shot data available for this season.
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* Col 3: Rolling FG% */}
+          <div style={{ flex: '0 1 340px', minWidth: 0 }}>
+            <div style={{ ...sectionCardStyle, marginBottom: 12 }}>
+              <label style={labelStyle}>Rolling FG% Season</label>
+              <select className="ctrl-select" value={rollingSeason}
+                onChange={e => setRollingSeason(e.target.value)} style={selectStyle}>
+                {rollingSeasons.map(s => <option key={s} value={s}>{s}</option>)}
+              </select>
+            </div>
+            <div style={{ ...sectionCardStyle, borderTop: `3px solid ${posColor}` }}>
+              <div style={{ fontSize: 10, fontWeight: 700, fontFamily: 'var(--font-mono)', letterSpacing: 1, textTransform: 'uppercase', opacity: 0.4, marginBottom: 12 }}>
+                30-Shot Rolling FG% by Zone
+              </div>
+              {rollingShots.length > 0 ? (
+                <RollingFGChart shotData={rollingShots} season={rollingSeason} />
+              ) : (
+                <div style={{ padding: '40px 0', textAlign: 'center', opacity: 0.35, fontSize: 13 }}>
+                  No rolling shot data available.
                 </div>
               )}
             </div>
