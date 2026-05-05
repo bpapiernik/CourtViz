@@ -363,23 +363,65 @@ export default function PlayerPage() {
   useEffect(() => {
     if (!id || !selectedSeason) return;
     const fetchRolling = async () => {
-      let allRows = [], from = 0;
+      console.log('[RollingFG] Starting fetch — player_id=%s season=%s', id, selectedSeason);
+      const t0 = performance.now();
+
+      let allRows = [], from = 0, page = 0;
+
       while (true) {
+        page++;
+        console.log('[RollingFG] Page %d – requesting rows %d–%d', page, from, from + 999);
+
         const { data, error } = await supabase
           .from('player_shots')
           .select('SEASON, ZONE_KEY, ZONE_SHOT_NUM, ROLLING_FG_PCT, LEAGUE_FG_PCT')
-          .eq('PLAYER_ID', Number(id))
+          .eq('PLAYER_ID', id)
+          .eq('SEASON', selectedSeason)
           .range(from, from + 999);
-        if (error || !data?.length) break;
+
+        if (error) {
+          console.error('[RollingFG] Supabase error on page %d:', page, error);
+          break;
+        }
+        if (!data?.length) {
+          console.log('[RollingFG] Empty response on page %d – stopping', page);
+          break;
+        }
+
+        console.log('[RollingFG] Page %d returned %d rows (first:', page, data.length, data[0], ')');
         allRows = allRows.concat(data);
-        if (data.length < 1000) break;
+
+        if (data.length < 1000) {
+          console.log('[RollingFG] Last page detected (< 1000 rows) – stopping');
+          break;
+        }
         from += 1000;
       }
+
+      const elapsed = (performance.now() - t0).toFixed(0);
+      console.log('[RollingFG] Done – %d total rows in %dms across %d pages', allRows.length, elapsed, page);
+
+      if (!allRows.length) {
+        console.warn('[RollingFG] No rows returned – check PLAYER_ID, RLS policy, or SEASON value');
+        setRollingShots([]);
+        return;
+      }
+
+      console.log('[RollingFG] Column sample:', Object.keys(allRows[0]));
+
+      const zones = [...new Set(allRows.map(r => r.ZONE_KEY))];
+      console.log('[RollingFG] Zone keys (%d unique):', zones.length, zones);
+
+      const nullPct  = allRows.filter(r => r.ROLLING_FG_PCT == null).length;
+      const nullLeag = allRows.filter(r => r.LEAGUE_FG_PCT  == null).length;
+      if (nullPct)  console.warn('[RollingFG] %d rows have null ROLLING_FG_PCT',  nullPct);
+      if (nullLeag) console.warn('[RollingFG] %d rows have null LEAGUE_FG_PCT',   nullLeag);
+
       setRollingShots(allRows);
-      // Default to most recent season
-      const availableSeasons = [...new Set(allRows.map(r => r.SEASON))].sort().reverse();
-      setRollingSeason(availableSeasons[0] ?? selectedSeason ?? '');
+      setRollingSeason(selectedSeason);
+      console.log('[RollingFG] State set – rollingSeason=%s', selectedSeason);
     };
+
     fetchRolling();
   }, [id, selectedSeason]);
 
