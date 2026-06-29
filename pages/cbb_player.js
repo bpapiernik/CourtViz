@@ -22,7 +22,7 @@ import { useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
 import { supabase } from '../lib/supabaseClient';
 
-const PLAYER_ROUTE = (id) => `/cbbplayer/${id}`;
+const PLAYER_ROUTE = (id) => `/cbb_player/${id}`;
 const BATCH = 48;
 const MIN_CONFIDENCE = 0.42; // below this top score → "Balanced {pos}"
 
