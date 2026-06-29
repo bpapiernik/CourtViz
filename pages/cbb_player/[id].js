@@ -321,8 +321,8 @@ export default function CbbPlayer() {
             <div style={S.splitRow}>
               <Tile label="FT%" value={`${rate('off_ft')}%`} />
               <Tile label="FT Rate" value={rate('off_ftr', 0)} />
-              <Tile label="AST%" value={pct('pctile_off_assist')} sub="pct" />
-              <Tile label="TO%" value={pct('pctile_off_to')} sub="pct" />
+              <Tile label="AST%" value={rate('off_assist', 0)} />
+              <Tile label="TO%" value={rate('off_to', 0)} />
             </div>
           </section>
         </div>
