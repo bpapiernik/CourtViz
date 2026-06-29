@@ -1,26 +1,32 @@
-// pages/cbbplayer/[id].js  →  route: /cbbplayer/123
+// pages/cbb_player/[id].js  →  route: /cbb_player/123
 //
-// CBB per-player detail page. Pulls every column for the player via
-// select('*'), so all ~250 stats are available; organizes them into a
-// bio header, skill radar, scoring/shot diet, a play-type profile
-// (frequency + PPP, the centerpiece), and a four-factors/defense block.
-//
+// CBB per-player detail page. Pulls every column via select('*').
 // Join: cbb_player_stats.player_id === cbb_team_rosters.athlete_id
-// Back link points to /cbb_player.
 //
-// NOTE: the archetype engine + radar are copied from cbb_players.js so the
-// two pages agree. If you'd rather not maintain two copies, lift STYLES /
-// groupFor / features / ARCHES / archetypeOf / RADAR into lib/cbb.js and
-// import them in both — say the word and I'll do that refactor.
+// PERCENTILE SCALING: source pctile_* columns are mixed-scale (most 0–1,
+// some 0–100, e.g. pctile_def_fc). normPct() normalizes per value so it
+// works regardless — anything ≤1 is treated as a fraction and ×100'd.
+// (Cleaner long-term: make all pctile_ columns one scale in your pipeline.)
+//
+// THEME: warm "paper" cards via the PAPER/LINE/TRACK consts below — tweak
+// those to retune every surface at once.
 
 import { useEffect, useMemo, useState } from 'react';
 import { useRouter } from 'next/router';
 import Link from 'next/link';
 import { supabase } from '../../lib/supabaseClient';
 
-const DEF_RATING_HIGHER_IS_BETTER = true; // mirror cbb_players.js
+const DEF_RATING_HIGHER_IS_BETTER = true;
 
-/* ── Play types (label + col helpers) ─────────────────────────────────── */
+// ── warm surface tokens ───────────────────────────────────────────────
+const PAPER = '#fbf8f1';
+const PAPER2 = '#f6f1e6';
+const LINE = 'rgba(86,64,30,0.14)';
+const TRACK = 'rgba(86,64,30,0.10)';
+const SHADOW = '0 1px 2px rgba(86,64,30,0.06)';
+const INK = '#2a2520';
+const MUTED = '#8a8170';
+
 const PLAYTYPES = [
   { key: 'rim_attack',       label: 'Rim Attack',        short: 'Rim' },
   { key: 'attack_kick',      label: 'Attack & Kick',     short: 'A&K' },
@@ -39,7 +45,7 @@ const PLAYTYPES = [
   { key: 'reb_scramble',     label: 'Putback / Scramble',short: 'Scrm' },
 ].map((p) => ({ ...p,
   pctCol: `off_style_${p.key}_pct`, usgCol: `off_style_${p.key}_usg`, pppCol: `off_style_${p.key}_ppp`,
-  pPctCol: `pctile_off_style_${p.key}_pct`, pUsgCol: `pctile_off_style_${p.key}_usg`, pPppCol: `pctile_off_style_${p.key}_ppp` }));
+  pPppCol: `pctile_off_style_${p.key}_ppp` }));
 
 const POS_GROUPS = [
   { key: 'Guard',   color: '#2563eb', test: (p) => /(^|\b)(g|pg|sg|guard|combo|lead)/i.test(p) },
@@ -51,12 +57,16 @@ const groupFor = (pos) =>
   (!pos ? null : POS_GROUPS.find((g) => g.test(String(pos)))) || { key: 'Other', color: '#64748b' };
 
 const clamp01 = (v) => Math.max(0, Math.min(1, v));
+const clamp100 = (v) => Math.max(0, Math.min(100, v));
 const avg = (...xs) => { const v = xs.map(Number).filter((x) => !Number.isNaN(x)); return v.length ? v.reduce((a, b) => a + b, 0) / v.length : 0; };
 
-/* ── Archetype engine (kept in sync with cbb_players.js) ──────────────── */
+// Mixed-scale safe: ≤1 → fraction (×100), else already a 0–100 percentile.
+const normPct = (v) => { const n = +v; return Number.isNaN(n) ? 0 : (n <= 1.0001 ? n * 100 : n); };
+
+/* ── Archetype engine (mirrors cbb_player.js) ─────────────────────────── */
 const MIN_CONFIDENCE = 0.42;
-function features(row, pctScale) {
-  const P = (c) => clamp01((+row[c] || 0) * pctScale / 100);
+function features(row) {
+  const P = (c) => clamp01(normPct(row[c]) / 100);
   const cap = (v) => Math.min(1, v * 4);
   const raw = {}; let sum = 0;
   for (const s of PLAYTYPES) { const v = Math.max(0, +row[s.pctCol] || 0); raw[s.key] = v; sum += v; }
@@ -85,8 +95,8 @@ const ARCHES = [
   { id: 'post_hub', label: 'Post Hub', color: '#dc2626', pos: { Guard: 0.05, Wing: 0.2, Forward: 0.7, Big: 1 }, f: (x) => 0.55 * x.cPost + 0.25 * x.assist + 0.20 * x.usage },
   { id: 'glass_rim', label: 'Glass & Rim Protect', color: '#b91c1c', pos: { Guard: 0.05, Wing: 0.2, Forward: 0.6, Big: 1 }, f: (x) => 0.4 * Math.max(x.orb, x.drb) + 0.4 * x.blk + 0.2 * (1 - x.usage) },
 ];
-function archetypeOf(row, pctScale) {
-  const x = features(row, pctScale); const grp = groupFor(row.posClass);
+function archetypeOf(row) {
+  const x = features(row); const grp = groupFor(row.posClass);
   let best = null;
   for (const a of ARCHES) { const s = clamp01(a.f(x)) * (a.pos[grp.key] ?? 0.5); if (!best || s > best.s) best = { ...a, s }; }
   const imp = x.impact;
@@ -95,32 +105,20 @@ function archetypeOf(row, pctScale) {
   return { label: best.label, color: best.color, qualifier };
 }
 
-/* ── Radar (mirrors cbb_players.js) ───────────────────────────────────── */
 const RADAR = [
-  { key: 'Shoot',  get: (r) => +r.pctile_off_threep || 0 },
-  { key: 'Finish', get: (r) => +r.pctile_off_twoprim || 0 },
-  { key: 'Pass',   get: (r) => +r.pctile_off_assist || 0 },
-  { key: 'Reb',    get: (r) => avg(r.pctile_off_reb, r.pctile_def_reb) },
-  { key: 'Def',    get: (r) => +r.pctile_def_adj_rtg || 0, invert: !DEF_RATING_HIGHER_IS_BETTER },
-  { key: 'Volume', get: (r) => +r.pctile_off_usage || 0 },
+  { key: 'Shoot',  get: (r) => r.pctile_off_threep },
+  { key: 'Finish', get: (r) => r.pctile_off_twoprim },
+  { key: 'Pass',   get: (r) => r.pctile_off_assist },
+  { key: 'Reb',    get: (r) => avg(normPct(r.pctile_off_reb), normPct(r.pctile_def_reb)), pre: true },
+  { key: 'Def',    get: (r) => r.pctile_def_adj_rtg, invert: !DEF_RATING_HIGHER_IS_BETTER },
+  { key: 'Volume', get: (r) => r.pctile_off_usage },
 ];
 
-/* ── Scale + format helpers ───────────────────────────────────────────── */
-function detectPctScale(rows) {
-  let max = 0;
-  for (const r of rows) for (const k in r) if (k.startsWith('pctile_')) { const v = +r[k]; if (!Number.isNaN(v)) max = Math.max(max, v); }
-  return max <= 1.5 ? 100 : 1;
-}
-function detectRateScale(rows, col) {
-  let max = 0; for (const r of rows) { const v = +r[col]; if (!Number.isNaN(v)) max = Math.max(max, v); }
-  return max <= 1.5 ? 100 : 1;
-}
 const pctColor = (p) => (p >= 66 ? '#059669' : p >= 40 ? '#d97706' : '#dc2626');
 const fmt = (v, d = 1) => (v === null || v === undefined || Number.isNaN(+v) ? '—' : (+v).toFixed(d));
 function fmtHeight(h) {
   const n = +h; if (Number.isNaN(n) || !n) return null;
-  let inches = n;
-  if (n >= 150 && n <= 230) inches = n / 2.54; // cm → in
+  let inches = n; if (n >= 150 && n <= 230) inches = n / 2.54;
   if (inches < 60 || inches > 95) return `${n}`;
   return `${Math.floor(inches / 12)}'${Math.round(inches % 12)}"`;
 }
@@ -131,33 +129,27 @@ async function fetchAll(buildQuery) {
   return rows;
 }
 
-/* ── Small UI atoms ───────────────────────────────────────────────────── */
-function Radar({ row, color, scale, size = 200 }) {
+/* ── UI atoms ─────────────────────────────────────────────────────────── */
+function Radar({ row, color, size = 200 }) {
   const c = size / 2, R = size / 2 - 26, n = RADAR.length;
   const pt = (i, r) => { const a = -Math.PI / 2 + (i * 2 * Math.PI) / n; return [c + Math.cos(a) * r, c + Math.sin(a) * r]; };
-  const vals = RADAR.map((m) => { let v = Math.max(0, Math.min(100, m.get(row) * scale)); if (m.invert) v = 100 - v; return v; });
+  const vals = RADAR.map((m) => { let v = m.pre ? clamp100(m.get(row)) : clamp100(normPct(m.get(row))); if (m.invert) v = 100 - v; return v; });
   const poly = vals.map((v, i) => pt(i, (v / 100) * R).join(',')).join(' ');
   return (
     <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`}>
-      {[0.25, 0.5, 0.75, 1].map((f, k) => <polygon key={k} points={RADAR.map((_, i) => pt(i, R * f).join(',')).join(' ')} fill="none" stroke="rgba(0,0,0,0.08)" strokeWidth="1" />)}
-      {RADAR.map((_, i) => { const [x, y] = pt(i, R); return <line key={i} x1={c} y1={c} x2={x} y2={y} stroke="rgba(0,0,0,0.07)" strokeWidth="1" />; })}
+      {[0.25, 0.5, 0.75, 1].map((f, k) => <polygon key={k} points={RADAR.map((_, i) => pt(i, R * f).join(',')).join(' ')} fill="none" stroke={LINE} strokeWidth="1" />)}
+      {RADAR.map((_, i) => { const [x, y] = pt(i, R); return <line key={i} x1={c} y1={c} x2={x} y2={y} stroke={TRACK} strokeWidth="1" />; })}
       <polygon points={poly} fill={`${color}30`} stroke={color} strokeWidth="2" strokeLinejoin="round" />
       {vals.map((v, i) => { const [x, y] = pt(i, (v / 100) * R); return <circle key={i} cx={x} cy={y} r="2.5" fill={color} />; })}
-      {RADAR.map((m, i) => { const [x, y] = pt(i, R + 13); return <text key={m.key} x={x} y={y} fontSize="10" fontWeight="700" fill="#6b7280" textAnchor="middle" dominantBaseline="middle" style={{ letterSpacing: 0.3, textTransform: 'uppercase' }}>{m.key}</text>; })}
+      {RADAR.map((m, i) => { const [x, y] = pt(i, R + 13); return <text key={m.key} x={x} y={y} fontSize="10" fontWeight="700" fill={MUTED} textAnchor="middle" dominantBaseline="middle" style={{ letterSpacing: 0.3, textTransform: 'uppercase' }}>{m.key}</text>; })}
     </svg>
   );
 }
 function Tile({ label, value, sub, color }) {
-  return (
-    <div style={S.tile}>
-      <div style={{ ...S.tileVal, color: color || '#111827' }}>{value}</div>
-      <div style={S.tileLabel}>{label}</div>
-      {sub != null && <div style={S.tileSub}>{sub}</div>}
-    </div>
-  );
+  return (<div style={S.tile}><div style={{ ...S.tileVal, color: color || INK }}>{value}</div><div style={S.tileLabel}>{label}</div>{sub != null && <div style={S.tileSub}>{sub}</div>}</div>);
 }
 function PctBar({ label, pctile, value }) {
-  const p = Math.max(0, Math.min(100, pctile));
+  const p = clamp100(pctile);
   return (
     <div style={S.pbRow}>
       <span style={S.pbLabel}>{label}</span>
@@ -167,28 +159,24 @@ function PctBar({ label, pctile, value }) {
     </div>
   );
 }
-
-/* ── Play-type frequency × efficiency scatter ─────────────────────────── */
 function PlayScatter({ data, maxFreq }) {
   const W = 320, H = 300, padL = 36, padB = 34, padT = 14, padR = 14;
   const ix = (f) => padL + (f / (maxFreq || 1)) * (W - padL - padR);
   const iy = (p) => padT + (1 - p / 100) * (H - padT - padB);
   return (
     <svg width="100%" viewBox={`0 0 ${W} ${H}`} style={{ maxWidth: 380 }}>
-      <line x1={padL} y1={iy(50)} x2={W - padR} y2={iy(50)} stroke="rgba(0,0,0,0.10)" strokeDasharray="4 4" />
-      <line x1={ix(maxFreq / 2)} y1={padT} x2={ix(maxFreq / 2)} y2={H - padB} stroke="rgba(0,0,0,0.10)" strokeDasharray="4 4" />
+      <line x1={padL} y1={iy(50)} x2={W - padR} y2={iy(50)} stroke={LINE} strokeDasharray="4 4" />
+      <line x1={ix(maxFreq / 2)} y1={padT} x2={ix(maxFreq / 2)} y2={H - padB} stroke={LINE} strokeDasharray="4 4" />
       <text x={W - padR} y={padT + 8} fontSize="8" fill="#059669" textAnchor="end" fontWeight="700">EFFICIENT ↑</text>
       <text x={W - padR} y={H - padB - 4} fontSize="8" fill="#dc2626" textAnchor="end" fontWeight="700">INEFFICIENT ↓</text>
-      <text x={padL} y={H - 6} fontSize="9" fill="#9ca3af" textAnchor="start">← less used</text>
-      <text x={W - padR} y={H - 6} fontSize="9" fill="#9ca3af" textAnchor="end">more used →</text>
+      <text x={padL} y={H - 6} fontSize="9" fill={MUTED} textAnchor="start">← less used</text>
+      <text x={W - padR} y={H - 6} fontSize="9" fill={MUTED} textAnchor="end">more used →</text>
       {data.map((d) => {
         const r = 4 + Math.min(10, (d.usg || 0) * 18);
-        return (
-          <g key={d.key}>
-            <circle cx={ix(d.freq)} cy={iy(d.pppPct)} r={r} fill={`${pctColor(d.pppPct)}55`} stroke={pctColor(d.pppPct)} strokeWidth="1.25" />
-            <text x={ix(d.freq)} y={iy(d.pppPct) - r - 2} fontSize="8" fontWeight="700" fill="#374151" textAnchor="middle">{d.short}</text>
-          </g>
-        );
+        return (<g key={d.key}>
+          <circle cx={ix(d.freq)} cy={iy(d.pppPct)} r={r} fill={`${pctColor(d.pppPct)}55`} stroke={pctColor(d.pppPct)} strokeWidth="1.25" />
+          <text x={ix(d.freq)} y={iy(d.pppPct) - r - 2} fontSize="8" fontWeight="700" fill="#4b4338" textAnchor="middle">{d.short}</text>
+        </g>);
       })}
     </svg>
   );
@@ -201,28 +189,24 @@ export default function CbbPlayer() {
 
   const [rows, setRows] = useState([]);
   const [roster, setRoster] = useState([]);
-  const [pctScale, setPctScale] = useState(1);
-  const [usgScale, setUsgScale] = useState(1);
+  const [usgScale, setUsgScale] = useState(100);
   const [season, setSeason] = useState('');
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     if (!id) return;
-    let alive = true;
-    setLoading(true);
+    let alive = true; setLoading(true);
     (async () => {
       const [stats, ros] = await Promise.all([
         fetchAll((lo, hi) => supabase.from('cbb_player_stats').select('*').eq('player_id', id).range(lo, hi)),
         fetchAll((lo, hi) => supabase.from('cbb_team_rosters').select('*').eq('athlete_id', id).range(lo, hi)),
       ]);
       if (!alive) return;
-      setPctScale(detectPctScale(stats));
-      setUsgScale(detectRateScale(stats, 'off_usage'));
-      setRows(stats);
-      setRoster(ros);
-      const seasonsSorted = [...new Set(stats.map((r) => r.season).filter(Boolean))].sort().reverse();
-      setSeason(seasonsSorted[0] || '');
-      setLoading(false);
+      let mx = 0; for (const r of stats) { const v = +r.off_usage; if (!Number.isNaN(v)) mx = Math.max(mx, v); }
+      setUsgScale(mx <= 1.5 ? 100 : 1);
+      setRows(stats); setRoster(ros);
+      const s = [...new Set(stats.map((r) => r.season).filter(Boolean))].sort().reverse();
+      setSeason(s[0] || ''); setLoading(false);
     })();
     return () => { alive = false; };
   }, [id]);
@@ -238,18 +222,17 @@ export default function CbbPlayer() {
       freq: Math.max(0, +row[pt.pctCol] || 0),
       usg: Math.max(0, +row[pt.usgCol] || 0),
       ppp: +row[pt.pppCol],
-      pppPct: Math.max(0, Math.min(100, (+row[pt.pPppCol] || 0) * pctScale)),
+      pppPct: clamp100(normPct(row[pt.pPppCol])),
     })).filter((d) => d.freq > 0.005);
     items.sort((a, b) => b.freq - a.freq);
-    const maxFreq = items.reduce((m, d) => Math.max(m, d.freq), 0);
-    return { rows: items, maxFreq };
-  }, [row, pctScale]);
+    return { rows: items, maxFreq: items.reduce((m, d) => Math.max(m, d.freq), 0) };
+  }, [row]);
 
   if (loading) return <div style={S.page}><div style={S.shell}><div style={S.empty}>Loading…</div></div></div>;
   if (!row) return <div style={S.page}><div style={S.shell}><Link href="/cbb_player" style={S.back}>← Player Board</Link><div style={S.empty}>No stats found for this player.</div></div></div>;
 
   const g = groupFor(row.posClass);
-  const arch = archetypeOf(row, pctScale);
+  const arch = archetypeOf(row);
   const head = pickKey(bio, ['athlete_headshot_href', 'athlete_headshot', 'headshot', 'athlete_headshot_url']);
   const logo = pickKey(bio, ['logo', 'team_logo']);
   const posKey = pickKey(bio, ['athlete_position_name', 'athlete_position_abbreviation', 'athlete_position']);
@@ -267,8 +250,8 @@ export default function CbbPlayer() {
   const home = bio && cityKey ? [bio[cityKey], stateKey ? bio[stateKey] : null].filter(Boolean).join(', ') : null;
   const chips = [jersey, ht, wt, exp, posKey && bio ? bio[posKey] : null, home].filter(Boolean);
 
-  const pct = (c, d = 0) => fmt((+row[c] || 0) * pctScale, d);                 // percentile display
-  const rate = (c, d = 1) => fmt((+row[c] || 0) * 100, d);                    // fraction → %
+  const pct = (c, d = 0) => fmt(normPct(row[c]), d);             // percentile (mixed-scale safe)
+  const rate = (c, d = 1) => fmt((+row[c] || 0) * 100, d);       // fraction → %
   const usage = fmt((+row.off_usage || 0) * usgScale, 1);
 
   return (
@@ -276,7 +259,6 @@ export default function CbbPlayer() {
       <div style={S.shell}>
         <Link href="/cbb_player" style={S.back}>← Player Board</Link>
 
-        {/* Header */}
         <div style={S.headCard}>
           <div style={{ ...S.bigAvatar, borderColor: g.color }}>
             {head && bio[head] ? <img src={bio[head]} alt="" style={S.bigAvatarImg} /> : <span style={S.bigAvatarFallback}>{(row.player_name || '?')[0]}</span>}
@@ -288,7 +270,7 @@ export default function CbbPlayer() {
             <div style={S.tagRow}>
               <span style={{ ...S.posBadge, color: g.color, borderColor: `${g.color}55` }}>{row.posClass || g.key}</span>
               <span style={{ ...S.archTag, color: arch.color, borderColor: `${arch.color}40`, background: `${arch.color}12` }}>
-                {arch.label} <span style={{ color: '#6b7280', fontWeight: 600 }}>· {arch.qualifier}</span>
+                {arch.label} <span style={{ color: MUTED, fontWeight: 600 }}>· {arch.qualifier}</span>
               </span>
               {seasons.length > 1 && (
                 <select style={S.seasonSel} value={season} onChange={(e) => setSeason(e.target.value)}>
@@ -300,7 +282,6 @@ export default function CbbPlayer() {
           </div>
         </div>
 
-        {/* Headline strip */}
         <div style={S.strip}>
           <Tile label="RAPM±" value={(+row.adj_rapm_margin >= 0 ? '+' : '') + fmt(row.adj_rapm_margin, 2)} color={+row.adj_rapm_margin >= 0 ? '#059669' : '#dc2626'} />
           <Tile label="Off Rtg" value={fmt(row.off_adj_rtg, 1)} sub={`${pct('pctile_off_adj_rtg')} pct`} />
@@ -310,24 +291,20 @@ export default function CbbPlayer() {
           <Tile label="Poss" value={Math.round((+row.off_poss || 0) + (+row.def_poss || 0))} />
         </div>
 
-        {/* Radar + scoring profile */}
         <div style={S.twoCol}>
           <section style={S.card}>
             <h2 style={S.h2}>Skill Profile</h2>
-            <div style={{ display: 'flex', justifyContent: 'center', margin: '6px 0' }}>
-              <Radar row={row} color={arch.color} scale={pctScale} />
-            </div>
+            <div style={{ display: 'flex', justifyContent: 'center', margin: '6px 0' }}><Radar row={row} color={arch.color} /></div>
             <p style={S.note}>Percentile vs. all D-I players. Defense uses adjusted defensive rating.</p>
           </section>
 
           <section style={S.card}>
             <h2 style={S.h2}>Scoring Profile</h2>
-            {/* shot diet */}
             <div style={S.diet}>
               {[
-                { label: 'Rim', r: 'off_twoprimr', m: 'off_twoprim', a: 'off_twoprim_ast', c: '#dc2626' },
-                { label: 'Mid', r: 'off_twopmidr', m: 'off_twopmid', a: 'off_twopmid_ast', c: '#d97706' },
-                { label: '3PT', r: 'off_threepr', m: 'off_threep', a: 'off_threep_ast', c: '#2563eb' },
+                { label: 'Rim', r: 'off_twoprimr', m: 'off_twoprim', c: '#dc2626' },
+                { label: 'Mid', r: 'off_twopmidr', m: 'off_twopmid', c: '#d97706' },
+                { label: '3PT', r: 'off_threepr', m: 'off_threep', c: '#2563eb' },
               ].map((s) => {
                 const share = (+row[s.r] || 0) * 100;
                 return (
@@ -350,7 +327,6 @@ export default function CbbPlayer() {
           </section>
         </div>
 
-        {/* Play-type profile — the centerpiece */}
         <section style={S.card}>
           <h2 style={S.h2}>Play-Type Profile</h2>
           <p style={S.note}>Sorted by frequency. Bar = how often they run it; PPP color = efficiency percentile (green efficient → red not). The scatter plots frequency against efficiency — top-right is their bread and butter, bottom-right is where opponents want them.</p>
@@ -366,11 +342,9 @@ export default function CbbPlayer() {
                 </div>
               ))}
               <div style={S.playHead}>
-                <span style={{ ...S.playLabel, color: '#9ca3af' }}>PLAY TYPE</span>
+                <span style={{ ...S.playLabel, color: MUTED }}>PLAY TYPE</span>
                 <span style={{ flex: 1 }} />
-                <span style={S.playFreqH}>FREQ</span>
-                <span style={S.playPppH}>PPP</span>
-                <span style={S.playPppPctH}>%ILE</span>
+                <span style={S.playFreqH}>FREQ</span><span style={S.playPppH}>PPP</span><span style={S.playPppPctH}>%ILE</span>
               </div>
             </div>
             <div style={{ flex: '1 1 320px', minWidth: 260, display: 'flex', justifyContent: 'center', alignItems: 'flex-start' }}>
@@ -379,26 +353,25 @@ export default function CbbPlayer() {
           </div>
         </section>
 
-        {/* Four factors + defense */}
         <div style={S.twoCol}>
           <section style={S.card}>
             <h2 style={S.h2}>Offense — Four Factors</h2>
-            <PctBar label="eFG%" pctile={(+row.pctile_off_efg || 0) * pctScale} value={`${rate('off_efg')}%`} />
-            <PctBar label="3PT%" pctile={(+row.pctile_off_threep || 0) * pctScale} value={`${rate('off_threep')}%`} />
-            <PctBar label="Rim FG%" pctile={(+row.pctile_off_twoprim || 0) * pctScale} value={`${rate('off_twoprim')}%`} />
-            <PctBar label="TO%" pctile={(+row.pctile_off_to || 0) * pctScale} value={rate('off_to', 1)} />
-            <PctBar label="FT Rate" pctile={(+row.pctile_off_ftr || 0) * pctScale} value={rate('off_ftr', 0)} />
-            <PctBar label="O-Reb%" pctile={(+row.pctile_off_orb || 0) * pctScale} value={rate('off_orb', 1)} />
-            <PctBar label="Assist%" pctile={(+row.pctile_off_assist || 0) * pctScale} value={rate('off_assist', 1)} />
+            <PctBar label="eFG%" pctile={normPct(row.pctile_off_efg)} value={`${rate('off_efg')}%`} />
+            <PctBar label="3PT%" pctile={normPct(row.pctile_off_threep)} value={`${rate('off_threep')}%`} />
+            <PctBar label="Rim FG%" pctile={normPct(row.pctile_off_twoprim)} value={`${rate('off_twoprim')}%`} />
+            <PctBar label="TO%" pctile={normPct(row.pctile_off_to)} value={rate('off_to', 1)} />
+            <PctBar label="FT Rate" pctile={normPct(row.pctile_off_ftr)} value={rate('off_ftr', 0)} />
+            <PctBar label="O-Reb%" pctile={normPct(row.pctile_off_orb)} value={rate('off_orb', 1)} />
+            <PctBar label="Assist%" pctile={normPct(row.pctile_off_assist)} value={rate('off_assist', 1)} />
           </section>
           <section style={S.card}>
             <h2 style={S.h2}>Defense & Hustle</h2>
-            <PctBar label="Def Rtg" pctile={DEF_RATING_HIGHER_IS_BETTER ? (+row.pctile_def_adj_rtg || 0) * pctScale : 100 - (+row.pctile_def_adj_rtg || 0) * pctScale} value={fmt(row.def_adj_rtg, 1)} />
-            <PctBar label="Steal%" pctile={(+row.pctile_def_stl || 0) * pctScale} value={rate('def_stl', 1)} />
-            <PctBar label="Block%" pctile={(+row.pctile_def_blk || 0) * pctScale} value={rate('def_blk', 1)} />
-            <PctBar label="D-Reb%" pctile={(+row.pctile_def_reb || 0) * pctScale} value={rate('def_reb', 1)} />
-            <PctBar label="Foul%" pctile={(+row.pctile_def_fc || 0) * pctScale} value={rate('def_fc', 1)} />
-            <PctBar label="Def RAPM" pctile={(+row.pctile_def_adj_rapm || 0) * pctScale} value={fmt(row.def_adj_rapm, 2)} />
+            <PctBar label="Def Rtg" pctile={DEF_RATING_HIGHER_IS_BETTER ? normPct(row.pctile_def_adj_rtg) : 100 - normPct(row.pctile_def_adj_rtg)} value={fmt(row.def_adj_rtg, 1)} />
+            <PctBar label="Steal%" pctile={normPct(row.pctile_def_stl)} value={rate('def_stl', 1)} />
+            <PctBar label="Block%" pctile={normPct(row.pctile_def_blk)} value={rate('def_blk', 1)} />
+            <PctBar label="D-Reb%" pctile={normPct(row.pctile_def_reb)} value={rate('def_reb', 1)} />
+            <PctBar label="Foul%" pctile={normPct(row.pctile_def_fc)} value={fmt(row.def_fc, 1)} />
+            <PctBar label="Def RAPM" pctile={normPct(row.pctile_def_adj_rapm)} value={fmt(row.def_adj_rapm, 2)} />
           </section>
         </div>
       </div>
@@ -407,59 +380,59 @@ export default function CbbPlayer() {
 }
 
 const S = {
-  page: { minHeight: '100vh', background: 'var(--background, #f4f1ea)', color: 'var(--foreground, #1a1a1a)', fontFamily: 'var(--font-sans, system-ui, -apple-system, sans-serif)' },
+  page: { minHeight: '100vh', background: 'var(--background, #f4f1ea)', color: 'var(--foreground, #2a2520)', fontFamily: 'var(--font-sans, system-ui, -apple-system, sans-serif)' },
   shell: { maxWidth: 1080, margin: '0 auto', padding: '28px 20px 80px' },
-  back: { display: 'inline-block', fontSize: 12, fontWeight: 700, color: '#6b7280', textDecoration: 'none', marginBottom: 20, letterSpacing: 0.3 },
-  empty: { padding: 80, textAlign: 'center', color: '#9ca3af' },
+  back: { display: 'inline-block', fontSize: 12, fontWeight: 700, color: MUTED, textDecoration: 'none', marginBottom: 20, letterSpacing: 0.3 },
+  empty: { padding: 80, textAlign: 'center', color: MUTED },
   headCard: { display: 'flex', gap: 20, alignItems: 'center', marginBottom: 20, flexWrap: 'wrap' },
-  bigAvatar: { position: 'relative', width: 96, height: 96, borderRadius: '50%', flexShrink: 0, border: '3px solid', background: '#e5e7eb', display: 'grid', placeItems: 'center' },
+  bigAvatar: { position: 'relative', width: 96, height: 96, borderRadius: '50%', flexShrink: 0, border: '3px solid', background: PAPER2, display: 'grid', placeItems: 'center' },
   bigAvatarImg: { width: '100%', height: '100%', objectFit: 'cover', borderRadius: '50%' },
-  bigAvatarFallback: { fontSize: 34, fontWeight: 800, color: '#9ca3af' },
-  bigLogo: { position: 'absolute', bottom: -4, right: -4, width: 36, height: 36, objectFit: 'contain', background: '#fff', borderRadius: '50%', padding: 2, boxShadow: '0 0 0 1px rgba(0,0,0,0.08)' },
-  eyebrow: { fontSize: 12, fontWeight: 700, color: '#6b7280', textTransform: 'uppercase', letterSpacing: 1.5 },
+  bigAvatarFallback: { fontSize: 34, fontWeight: 800, color: MUTED },
+  bigLogo: { position: 'absolute', bottom: -4, right: -4, width: 36, height: 36, objectFit: 'contain', background: PAPER, borderRadius: '50%', padding: 2, boxShadow: `0 0 0 1px ${LINE}` },
+  eyebrow: { fontSize: 12, fontWeight: 700, color: MUTED, textTransform: 'uppercase', letterSpacing: 1.5 },
   name: { margin: '4px 0 8px', fontSize: 34, fontWeight: 800, letterSpacing: -0.8, lineHeight: 1 },
   tagRow: { display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' },
   posBadge: { fontSize: 11, fontWeight: 700, letterSpacing: 0.5, textTransform: 'uppercase', padding: '2px 9px', border: '1px solid', borderRadius: 6 },
   archTag: { fontSize: 13, fontWeight: 800, padding: '3px 11px', border: '1px solid', borderRadius: 8 },
-  seasonSel: { padding: '5px 10px', fontSize: 12, fontWeight: 700, background: '#fff', border: '1px solid rgba(0,0,0,0.14)', borderRadius: 8, cursor: 'pointer' },
+  seasonSel: { padding: '5px 10px', fontSize: 12, fontWeight: 700, background: PAPER, border: `1px solid ${LINE}`, borderRadius: 8, cursor: 'pointer', color: INK },
   chips: { display: 'flex', gap: 7, flexWrap: 'wrap', marginTop: 10 },
-  chip: { fontSize: 12, fontWeight: 600, color: '#374151', background: '#fff', border: '1px solid rgba(0,0,0,0.10)', borderRadius: 7, padding: '3px 9px' },
+  chip: { fontSize: 12, fontWeight: 600, color: '#4b4338', background: PAPER, border: `1px solid ${LINE}`, borderRadius: 7, padding: '3px 9px' },
   strip: { display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(120px, 1fr))', gap: 10, marginBottom: 20 },
-  tile: { background: '#fff', border: '1px solid rgba(0,0,0,0.09)', borderRadius: 12, padding: '12px 14px', textAlign: 'center', boxShadow: '0 1px 2px rgba(0,0,0,0.04)' },
+  tile: { background: PAPER, border: `1px solid ${LINE}`, borderRadius: 12, padding: '12px 14px', textAlign: 'center', boxShadow: SHADOW },
   tileVal: { fontFamily: 'var(--font-mono, monospace)', fontSize: 21, fontWeight: 800, lineHeight: 1 },
-  tileLabel: { fontSize: 10, color: '#6b7280', textTransform: 'uppercase', letterSpacing: 1, marginTop: 5 },
-  tileSub: { fontSize: 10, color: '#9ca3af', marginTop: 2 },
+  tileLabel: { fontSize: 10, color: MUTED, textTransform: 'uppercase', letterSpacing: 1, marginTop: 5 },
+  tileSub: { fontSize: 10, color: MUTED, marginTop: 2 },
   twoCol: { display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: 16, marginBottom: 16 },
-  card: { background: '#fff', border: '1px solid rgba(0,0,0,0.09)', borderRadius: 16, padding: 18, boxShadow: '0 1px 2px rgba(0,0,0,0.04)' },
-  h2: { margin: '0 0 10px', fontSize: 15, fontWeight: 800, letterSpacing: -0.2 },
-  note: { fontSize: 11.5, color: '#9ca3af', lineHeight: 1.5, margin: '4px 0 0' },
+  card: { background: PAPER, border: `1px solid ${LINE}`, borderRadius: 16, padding: 18, boxShadow: SHADOW },
+  h2: { margin: '0 0 10px', fontSize: 15, fontWeight: 800, letterSpacing: -0.2, color: INK },
+  note: { fontSize: 11.5, color: MUTED, lineHeight: 1.5, margin: '4px 0 0' },
   diet: { margin: '4px 0 12px' },
   dietRow: { display: 'flex', alignItems: 'center', gap: 8, padding: '4px 0' },
-  dietHead: { display: 'flex', alignItems: 'center', gap: 8, paddingTop: 4, borderTop: '1px solid rgba(0,0,0,0.06)', marginTop: 4 },
-  dietLabel: { width: 34, fontSize: 12, fontWeight: 700, color: '#374151' },
-  dietTrack: { flex: 1, height: 8, borderRadius: 4, background: 'rgba(0,0,0,0.06)', overflow: 'hidden' },
+  dietHead: { display: 'flex', alignItems: 'center', gap: 8, paddingTop: 4, borderTop: `1px solid ${TRACK}`, marginTop: 4 },
+  dietLabel: { width: 34, fontSize: 12, fontWeight: 700, color: '#4b4338' },
+  dietTrack: { flex: 1, height: 8, borderRadius: 4, background: TRACK, overflow: 'hidden' },
   dietFill: { height: '100%', borderRadius: 4 },
   dietShare: { width: 38, textAlign: 'right', fontFamily: 'var(--font-mono, monospace)', fontSize: 12, fontWeight: 700 },
-  dietMake: { width: 48, textAlign: 'right', fontFamily: 'var(--font-mono, monospace)', fontSize: 12, color: '#6b7280' },
-  dietShareH: { width: 38, textAlign: 'right', fontSize: 9, color: '#9ca3af', letterSpacing: 1 },
-  dietMakeH: { width: 48, textAlign: 'right', fontSize: 9, color: '#9ca3af', letterSpacing: 1 },
+  dietMake: { width: 48, textAlign: 'right', fontFamily: 'var(--font-mono, monospace)', fontSize: 12, color: MUTED },
+  dietShareH: { width: 38, textAlign: 'right', fontSize: 9, color: MUTED, letterSpacing: 1 },
+  dietMakeH: { width: 48, textAlign: 'right', fontSize: 9, color: MUTED, letterSpacing: 1 },
   splitRow: { display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 8 },
   playWrap: { display: 'flex', gap: 20, flexWrap: 'wrap', marginTop: 12 },
   playRow: { display: 'flex', alignItems: 'center', gap: 8, padding: '5px 0' },
-  playHead: { display: 'flex', alignItems: 'center', gap: 8, paddingTop: 6, marginTop: 4, borderTop: '1px solid rgba(0,0,0,0.06)' },
-  playLabel: { width: 124, fontSize: 12, fontWeight: 600, color: '#374151', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' },
-  playTrack: { flex: 1, minWidth: 40, height: 9, borderRadius: 5, background: 'rgba(0,0,0,0.06)', overflow: 'hidden' },
+  playHead: { display: 'flex', alignItems: 'center', gap: 8, paddingTop: 6, marginTop: 4, borderTop: `1px solid ${TRACK}` },
+  playLabel: { width: 124, fontSize: 12, fontWeight: 600, color: '#4b4338', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' },
+  playTrack: { flex: 1, minWidth: 40, height: 9, borderRadius: 5, background: TRACK, overflow: 'hidden' },
   playFill: { height: '100%', borderRadius: 5 },
   playFreq: { width: 42, textAlign: 'right', fontFamily: 'var(--font-mono, monospace)', fontSize: 12, fontWeight: 700 },
   playPpp: { width: 38, textAlign: 'right', fontFamily: 'var(--font-mono, monospace)', fontSize: 12, fontWeight: 800 },
-  playPppPct: { width: 26, textAlign: 'right', fontFamily: 'var(--font-mono, monospace)', fontSize: 11, color: '#9ca3af' },
-  playFreqH: { width: 42, textAlign: 'right', fontSize: 9, color: '#9ca3af', letterSpacing: 1 },
-  playPppH: { width: 38, textAlign: 'right', fontSize: 9, color: '#9ca3af', letterSpacing: 1 },
-  playPppPctH: { width: 26, textAlign: 'right', fontSize: 9, color: '#9ca3af', letterSpacing: 1 },
+  playPppPct: { width: 26, textAlign: 'right', fontFamily: 'var(--font-mono, monospace)', fontSize: 11, color: MUTED },
+  playFreqH: { width: 42, textAlign: 'right', fontSize: 9, color: MUTED, letterSpacing: 1 },
+  playPppH: { width: 38, textAlign: 'right', fontSize: 9, color: MUTED, letterSpacing: 1 },
+  playPppPctH: { width: 26, textAlign: 'right', fontSize: 9, color: MUTED, letterSpacing: 1 },
   pbRow: { display: 'flex', alignItems: 'center', gap: 10, padding: '5px 0' },
-  pbLabel: { width: 72, fontSize: 12, fontWeight: 600, color: '#374151' },
-  pbTrack: { flex: 1, height: 9, borderRadius: 5, background: 'rgba(0,0,0,0.06)', overflow: 'hidden' },
+  pbLabel: { width: 72, fontSize: 12, fontWeight: 600, color: '#4b4338' },
+  pbTrack: { flex: 1, height: 9, borderRadius: 5, background: TRACK, overflow: 'hidden' },
   pbFill: { height: '100%', borderRadius: 5 },
-  pbVal: { width: 52, textAlign: 'right', fontFamily: 'var(--font-mono, monospace)', fontSize: 12, fontWeight: 700, color: '#374151' },
+  pbVal: { width: 52, textAlign: 'right', fontFamily: 'var(--font-mono, monospace)', fontSize: 12, fontWeight: 700, color: '#4b4338' },
   pbPct: { width: 26, textAlign: 'right', fontFamily: 'var(--font-mono, monospace)', fontSize: 12, fontWeight: 800 },
 };
