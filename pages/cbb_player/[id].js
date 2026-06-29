@@ -63,6 +63,15 @@ const avg = (...xs) => { const v = xs.map(Number).filter((x) => !Number.isNaN(x)
 // Mixed-scale safe: ≤1 → fraction (×100), else already a 0–100 percentile.
 const normPct = (v) => { const n = +v; return Number.isNaN(n) ? 0 : (n <= 1.0001 ? n * 100 : n); };
 
+// Percentile rank of v within a sorted-ascending array (% of values ≤ v).
+function pctRank(sortedAsc, v) {
+  const x = +v;
+  if (!sortedAsc.length || Number.isNaN(x)) return null;
+  let lo = 0, hi = sortedAsc.length;
+  while (lo < hi) { const mid = (lo + hi) >> 1; if (sortedAsc[mid] <= x) lo = mid + 1; else hi = mid; }
+  return (lo / sortedAsc.length) * 100;
+}
+
 /* ── Archetype engine (mirrors cbb_player.js) ─────────────────────────── */
 const MIN_CONFIDENCE = 0.42;
 function features(row) {
@@ -191,6 +200,7 @@ export default function CbbPlayer() {
   const [roster, setRoster] = useState([]);
   const [usgScale, setUsgScale] = useState(100);
   const [season, setSeason] = useState('');
+  const [drebDist, setDrebDist] = useState([]); // season-wide def_reb, sorted asc
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -211,9 +221,24 @@ export default function CbbPlayer() {
     return () => { alive = false; };
   }, [id]);
 
+  // Season-wide def_reb so we can rank this player ourselves (the stored
+  // pctile_def_reb is unreliable). One numeric column, ~5k rows. Add a
+  // possession floor here if you want to match a "qualified players" pool.
+  useEffect(() => {
+    if (!season) return;
+    let alive = true;
+    (async () => {
+      const all = await fetchAll((lo, hi) => supabase.from('cbb_player_stats').select('def_reb').eq('season', season).range(lo, hi));
+      if (!alive) return;
+      setDrebDist(all.map((r) => +r.def_reb).filter((v) => !Number.isNaN(v)).sort((a, b) => a - b));
+    })();
+    return () => { alive = false; };
+  }, [season]);
+
   const seasons = useMemo(() => [...new Set(rows.map((r) => r.season).filter(Boolean))].sort().reverse(), [rows]);
   const row = useMemo(() => rows.find((r) => r.season === season) || rows[0] || null, [rows, season]);
   const bio = useMemo(() => roster.find((r) => r.season === season) || roster[0] || null, [roster, season]);
+  const drebPctile = useMemo(() => (row ? pctRank(drebDist, +row.def_reb) : null), [drebDist, row]);
 
   const playData = useMemo(() => {
     if (!row) return { rows: [], maxFreq: 0 };
@@ -321,8 +346,8 @@ export default function CbbPlayer() {
             <div style={S.splitRow}>
               <Tile label="FT%" value={`${rate('off_ft')}%`} />
               <Tile label="FT Rate" value={rate('off_ftr', 0)} />
-              <Tile label="AST%" value={rate('off_assist', 0)} />
-              <Tile label="TO%" value={rate('off_to', 0)} />
+              <Tile label="AST%" value={pct('pctile_off_assist')} sub="pct" />
+              <Tile label="TO%" value={pct('pctile_off_to')} sub="pct" />
             </div>
           </section>
         </div>
@@ -369,7 +394,7 @@ export default function CbbPlayer() {
             <PctBar label="Def Rtg" pctile={DEF_RATING_HIGHER_IS_BETTER ? normPct(row.pctile_def_adj_rtg) : 100 - normPct(row.pctile_def_adj_rtg)} value={fmt(row.def_adj_rtg, 1)} />
             <PctBar label="Steal%" pctile={normPct(row.pctile_def_stl)} value={rate('def_stl', 1)} />
             <PctBar label="Block%" pctile={normPct(row.pctile_def_blk)} value={rate('def_blk', 1)} />
-            <PctBar label="D-Reb%" pctile={normPct(row.pctile_def_reb)} value={rate('def_reb', 1)} />
+            <PctBar label="D-Reb%" pctile={drebPctile ?? normPct(row.pctile_def_reb)} value={rate('def_reb', 1)} />
             <PctBar label="Foul%" pctile={normPct(row.pctile_def_fc)} value={fmt(row.def_fc, 1)} />
             <PctBar label="Def RAPM" pctile={normPct(row.pctile_def_adj_rapm)} value={fmt(row.def_adj_rapm, 2)} />
           </section>
