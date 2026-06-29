@@ -1,16 +1,22 @@
 // pages/cbb_players.js  →  route: /cbb_players
 //
-// CBB player directory — visual card grid. Each card derives an archetype
-// tag and a 6-spoke percentile radar from cbb_player_stats, and pulls the
-// headshot + team logo from cbb_team_rosters. Cards link to the detail page.
+// CBB player directory — visual card grid. Cards derive a multi-stat,
+// position-aware archetype and a 6-spoke percentile radar from
+// cbb_player_stats, and pull headshot + team logo from cbb_team_rosters.
 //
-// Detail page lives at: pages/cbbplayer/[id].js  → /cbbplayer/123
-// Join: cbb_player_stats.player_id === cbb_team_rosters.athlete_id
+// Detail page: pages/cbbplayer/[id].js   Join: player_id === athlete_id
 //
-// NOTE ON SCALES: pctile_* and off_usage in this data are stored 0–1, not
-// 0–100. We detect the scale at load (PCT_SCALE / USG_SCALE) so the radar,
-// the efficiency qualifier, and USG% all read correctly — and it self-heals
-// if you ever rescale those columns to 0–100.
+// SCALES: pctile_* and off_usage are stored 0–1 here; detectScale() finds
+// the scale at load so radar, qualifier, and USG% all read right (and it
+// self-heals if you ever rescale those columns to 0–100).
+//
+// ───────────────────────────────────────────────────────────────────────
+// ARCHETYPE ENGINE  (rules now; port to your notebook later)
+// features() + ARCHES + archetypeOf() are pure and self-contained. To move
+// canonical archetypes into Python: replicate features() on your dataframe,
+// keep the same ARCHES weights and POS_FIT table, write the winning label to
+// an `archetype` column, then delete this block and read p.archetype here.
+// ───────────────────────────────────────────────────────────────────────
 
 import { useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
@@ -18,24 +24,13 @@ import { supabase } from '../lib/supabaseClient';
 
 const PLAYER_ROUTE = (id) => `/cbbplayer/${id}`;
 const BATCH = 48;
+const MIN_CONFIDENCE = 0.42; // below this top score → "Balanced {pos}"
 
-const STYLES = [
-  { key: 'rim_attack',       label: 'Rim Attacker',     color: '#0d9488' },
-  { key: 'attack_kick',      label: 'Driver & Kicker',  color: '#0d9488' },
-  { key: 'transition',       label: 'Transition Threat',color: '#0d9488' },
-  { key: 'perimeter_sniper', label: 'Movement Sniper',  color: '#2563eb' },
-  { key: 'dribble_jumper',   label: 'Shot Creator',     color: '#2563eb' },
-  { key: 'mid_range',        label: 'Mid-Range Scorer', color: '#2563eb' },
-  { key: 'pnr_passer',       label: 'P&R Playmaker',    color: '#9333ea' },
-  { key: 'post_kick',        label: 'Post Hub',         color: '#9333ea' },
-  { key: 'hits_cutter',      label: 'Cutter Feeder',    color: '#9333ea' },
-  { key: 'perimeter_cut',    label: 'Perimeter Cutter', color: '#d97706' },
-  { key: 'big_cut_roll',     label: 'Roll Man',         color: '#d97706' },
-  { key: 'post_up',          label: 'Post Scorer',      color: '#dc2626' },
-  { key: 'pick_pop',         label: 'Pick & Pop',       color: '#dc2626' },
-  { key: 'high_low',         label: 'High-Low Big',     color: '#dc2626' },
-  { key: 'reb_scramble',     label: 'Putback Finisher', color: '#dc2626' },
-].map((s) => ({ ...s, pctCol: `off_style_${s.key}_pct`, effCol: `pctile_off_style_${s.key}_ppp` }));
+// Style cols are still used for the radar-independent role mix + the SELECT.
+const STYLES = ['rim_attack','attack_kick','transition','perimeter_sniper',
+  'dribble_jumper','mid_range','pnr_passer','post_kick','hits_cutter',
+  'perimeter_cut','big_cut_roll','post_up','pick_pop','high_low','reb_scramble']
+  .map((key) => ({ key, pctCol: `off_style_${key}_pct` }));
 
 const POS_GROUPS = [
   { key: 'Guard',   color: '#2563eb', test: (p) => /(^|\b)(g|pg|sg|guard|combo|lead)/i.test(p) },
@@ -46,10 +41,12 @@ const POS_GROUPS = [
 const groupFor = (pos) =>
   (!pos ? null : POS_GROUPS.find((g) => g.test(String(pos)))) || { key: 'Other', color: '#64748b' };
 
+const clamp01 = (v) => Math.max(0, Math.min(1, v));
 const avg = (...xs) => {
   const v = xs.map(Number).filter((x) => !Number.isNaN(x));
   return v.length ? v.reduce((a, b) => a + b, 0) / v.length : 0;
 };
+
 const RADAR = [
   { key: 'Score',  get: (r) => +r.pctile_off_efg || 0 },
   { key: 'Shoot',  get: (r) => +r.pctile_off_threep || 0 },
@@ -66,8 +63,11 @@ const BASE_COLS = [
   'pctile_adj_rapm_margin', 'pctile_off_efg', 'pctile_off_threep',
   'pctile_off_assist', 'pctile_off_reb', 'pctile_def_reb',
   'pctile_def_stl', 'pctile_def_blk',
+  // archetype features:
+  'pctile_off_usage', 'pctile_off_threepr', 'pctile_off_twoprimr',
+  'pctile_off_ftr', 'pctile_off_orb',
 ];
-const STATS_SELECT = [...BASE_COLS, ...STYLES.flatMap((s) => [s.pctCol, s.effCol])].join(', ');
+const STATS_SELECT = [...BASE_COLS, ...STYLES.map((s) => s.pctCol)].join(', ');
 
 const pickKey = (sample, cands) => (sample ? cands.find((k) => k in sample) || null : null);
 
@@ -84,31 +84,100 @@ async function fetchAll(buildQuery) {
   return rows;
 }
 
-// Detect whether a set of columns is stored 0–1 (return 100) or 0–100 (return 1).
 function detectScale(rows, cols) {
   let max = 0;
-  for (const r of rows) for (const c of cols) {
-    const v = +r[c];
-    if (!Number.isNaN(v)) max = Math.max(max, v);
-  }
+  for (const r of rows) for (const c of cols) { const v = +r[c]; if (!Number.isNaN(v)) max = Math.max(max, v); }
   return max <= 1.5 ? 100 : 1;
 }
 
-function archetypeOf(row, pctScale) {
-  let best = null;
-  for (const s of STYLES) {
-    const pct = +row[s.pctCol];
-    if (!Number.isNaN(pct) && (best === null || pct > best.pct)) {
-      best = { ...s, pct, eff: +row[s.effCol] };
-    }
-  }
-  if (!best || !(best.pct > 0)) return { label: 'Role Player', color: '#64748b', qualifier: '' };
-  const e = best.eff * pctScale;
-  const qualifier = Number.isNaN(e) ? '' : e >= 80 ? 'elite' : e >= 62 ? 'efficient' : e >= 40 ? 'solid' : 'low-eff';
-  return { label: best.label, color: best.color, qualifier };
+/* ── Feature vector (all 0–1) ─────────────────────────────────────────── */
+function features(row, pctScale) {
+  const P = (c) => clamp01((+row[c] || 0) * pctScale / 100); // percentile → 0..1
+  const cap = (v) => Math.min(1, v * 4);                     // role share → 0..1
+
+  const raw = {}; let sum = 0;
+  for (const s of STYLES) { const v = Math.max(0, +row[s.pctCol] || 0); raw[s.key] = v; sum += v; }
+  const share = (k) => (sum > 0 ? raw[k] / sum : 0);
+
+  return {
+    usage:     P('pctile_off_usage'),
+    assist:    P('pctile_off_assist'),
+    threeRate: P('pctile_off_threepr'),
+    threeMake: P('pctile_off_threep'),
+    rimRate:   P('pctile_off_twoprimr'),
+    ftr:       P('pctile_off_ftr'),
+    orb:       P('pctile_off_orb'),
+    drb:       P('pctile_def_reb'),
+    stl:       P('pctile_def_stl'),
+    blk:       P('pctile_def_blk'),
+    efg:       P('pctile_off_efg'),
+    impact:    P('pctile_adj_rapm_margin'),
+    cPost:     cap(share('post_up')),
+    cSelf:     cap(share('dribble_jumper')),
+    cRim:      cap(share('rim_attack')),
+    cPnr:      cap(share('pnr_passer')),
+    cPickPop:  cap(share('pick_pop')),
+  };
 }
 
-// Should we show the transfer badge? Only for a real, different source school.
+/* ── Archetype library: weighted multi-stat blends × position fit ─────── */
+const ARCHES = [
+  { id: 'lead_guard',  label: 'Lead Guard',         color: '#2563eb',
+    pos: { Guard: 1, Wing: 0.55, Forward: 0.3, Big: 0.1 },
+    f: (x) => 0.55 * x.assist + 0.35 * x.usage + 0.10 * x.cPnr },
+  { id: 'shot_creator',label: 'Shot Creator',       color: '#1d4ed8',
+    pos: { Guard: 1, Wing: 0.9, Forward: 0.4, Big: 0.15 },
+    f: (x) => 0.5 * x.usage + 0.35 * x.cSelf + 0.15 * (1 - x.assist) },
+  { id: 'sniper',      label: 'Movement Sniper',    color: '#3b82f6',
+    pos: { Guard: 0.9, Wing: 1, Forward: 0.7, Big: 0.3 },
+    f: (x) => 0.4 * x.threeRate + 0.35 * x.threeMake + 0.25 * (1 - x.usage) },
+  { id: 'three_d',     label: '3-and-D Wing',       color: '#0891b2',
+    pos: { Guard: 0.7, Wing: 1, Forward: 0.8, Big: 0.3 },
+    f: (x) => 0.35 * x.threeMake + 0.40 * Math.max(x.stl, x.blk) + 0.25 * (1 - x.usage) },
+  { id: 'slasher',     label: 'Slasher',            color: '#0d9488',
+    pos: { Guard: 0.9, Wing: 1, Forward: 0.7, Big: 0.4 },
+    f: (x) => 0.4 * Math.max(x.rimRate, x.cRim) + 0.3 * x.ftr + 0.3 * (1 - x.threeRate) },
+  { id: 'connector',   label: 'Connector',          color: '#16a34a',
+    pos: { Guard: 0.6, Wing: 0.9, Forward: 1, Big: 0.5 },
+    f: (x) => 0.5 * x.assist + 0.3 * x.efg + 0.2 * (1 - x.usage) },
+  { id: 'forward_hub', label: 'Forward Hub',        color: '#ca8a04',
+    pos: { Guard: 0.2, Wing: 0.6, Forward: 1, Big: 0.8 },
+    f: (x) => 0.4 * x.usage + 0.3 * Math.max(x.rimRate, x.cPost) + 0.15 * x.orb + 0.15 * x.assist },
+  { id: 'stretch_big', label: 'Stretch Big',        color: '#d97706',
+    pos: { Guard: 0.1, Wing: 0.4, Forward: 0.8, Big: 1 },
+    f: (x) => 0.5 * x.threeRate + 0.5 * x.cPickPop },
+  { id: 'rim_runner',  label: 'Rim-Running Big',    color: '#ea580c',
+    pos: { Guard: 0.05, Wing: 0.2, Forward: 0.6, Big: 1 },
+    f: (x) => 0.4 * Math.max(x.rimRate, x.cRim) + 0.3 * x.orb + 0.3 * (1 - x.threeRate) },
+  { id: 'post_hub',    label: 'Post Hub',           color: '#dc2626',
+    pos: { Guard: 0.05, Wing: 0.2, Forward: 0.7, Big: 1 },
+    f: (x) => 0.55 * x.cPost + 0.25 * x.assist + 0.20 * x.usage },
+  { id: 'glass_rim',   label: 'Glass & Rim Protect',color: '#b91c1c',
+    pos: { Guard: 0.05, Wing: 0.2, Forward: 0.6, Big: 1 },
+    f: (x) => 0.4 * Math.max(x.orb, x.drb) + 0.4 * x.blk + 0.2 * (1 - x.usage) },
+];
+
+function archetypeOf(row, pctScale) {
+  const x = features(row, pctScale);
+  const grp = groupFor(row.posClass);
+  let best = null, second = null;
+  for (const a of ARCHES) {
+    const s = clamp01(a.f(x)) * (a.pos[grp.key] ?? 0.5);
+    if (!best || s > best.s) { second = best; best = { ...a, s }; }
+    else if (!second || s > second.s) { second = { ...a, s }; }
+  }
+  const imp = x.impact;
+  const qualifier = imp >= 0.85 ? 'elite' : imp >= 0.65 ? 'strong' : imp >= 0.40 ? 'solid' : 'role';
+
+  if (!best || best.s < MIN_CONFIDENCE) {
+    return { label: `Balanced ${grp.key}`, color: grp.color, qualifier,
+      title: best ? `top: ${best.label} ${best.s.toFixed(2)} (below ${MIN_CONFIDENCE})` : '' };
+  }
+  return { label: best.label, color: best.color, qualifier,
+    title: `${best.label} ${best.s.toFixed(2)} · alt ${second ? second.label + ' ' + second.s.toFixed(2) : '—'}` };
+}
+
+/* ── Transfer badge: only a real, different source school ─────────────── */
 function transferSource(p) {
   const src = (p.transfer_src ?? '').toString().trim();
   if (!src || ['0', 'none', 'null', 'na'].includes(src.toLowerCase())) return null;
@@ -130,20 +199,12 @@ function Radar({ row, color, scale, size = 132 }) {
         <polygon key={k} points={RADAR.map((_, i) => pt(i, R * f).join(',')).join(' ')}
           fill="none" stroke="rgba(0,0,0,0.08)" strokeWidth="1" />
       ))}
-      {RADAR.map((_, i) => {
-        const [x, y] = pt(i, R);
-        return <line key={i} x1={c} y1={c} x2={x} y2={y} stroke="rgba(0,0,0,0.07)" strokeWidth="1" />;
-      })}
+      {RADAR.map((_, i) => { const [x, y] = pt(i, R);
+        return <line key={i} x1={c} y1={c} x2={x} y2={y} stroke="rgba(0,0,0,0.07)" strokeWidth="1" />; })}
       <polygon points={poly} fill={`${color}33`} stroke={color} strokeWidth="1.75" strokeLinejoin="round" />
-      {RADAR.map((m, i) => {
-        const [x, y] = pt(i, R + 9);
-        return (
-          <text key={m.key} x={x} y={y} fontSize="8" fontWeight="700" fill="#9ca3af"
-            textAnchor="middle" dominantBaseline="middle" style={{ letterSpacing: 0.3, textTransform: 'uppercase' }}>
-            {m.key}
-          </text>
-        );
-      })}
+      {RADAR.map((m, i) => { const [x, y] = pt(i, R + 9);
+        return (<text key={m.key} x={x} y={y} fontSize="8" fontWeight="700" fill="#9ca3af"
+          textAnchor="middle" dominantBaseline="middle" style={{ letterSpacing: 0.3, textTransform: 'uppercase' }}>{m.key}</text>); })}
     </svg>
   );
 }
@@ -163,21 +224,18 @@ function PlayerCard({ p, pctScale, usgScale }) {
 
         <div style={S.cardTop}>
           <div style={{ ...S.avatar, borderColor: g.color }}>
-            {p.headshot
-              ? <img src={p.headshot} alt="" style={S.avatarImg} />
+            {p.headshot ? <img src={p.headshot} alt="" style={S.avatarImg} />
               : <span style={S.avatarFallback}>{(p.player_name || '?')[0]}</span>}
             {p.logo && <img src={p.logo} alt="" style={S.logoBadge} />}
           </div>
           <div style={{ minWidth: 0, flex: 1 }}>
             <div style={S.name}>{p.player_name || 'Unknown'}</div>
             <div style={S.teamLine}>{p.team || '—'} · {p.conf || '—'}</div>
-            <span style={{ ...S.posBadge, color: g.color, borderColor: `${g.color}55` }}>
-              {p.posClass || g.key}
-            </span>
+            <span style={{ ...S.posBadge, color: g.color, borderColor: `${g.color}55` }}>{p.posClass || g.key}</span>
           </div>
         </div>
 
-        <div style={{ ...S.archetype, borderColor: `${arch.color}40`, background: `${arch.color}12` }}>
+        <div style={{ ...S.archetype, borderColor: `${arch.color}40`, background: `${arch.color}12` }} title={arch.title}>
           <span style={{ color: arch.color, fontWeight: 800 }}>{arch.label}</span>
           {arch.qualifier && <span style={S.qualifier}>· {arch.qualifier}</span>}
         </div>
@@ -187,18 +245,11 @@ function PlayerCard({ p, pctScale, usgScale }) {
         <div style={S.statRow}>
           <div style={S.stat}>
             <span style={{ ...S.statVal, color: rapm >= 0 ? '#059669' : '#dc2626' }}>
-              {(rapm >= 0 ? '+' : '') + (Number.isNaN(rapm) ? '—' : rapm.toFixed(2))}
-            </span>
+              {(rapm >= 0 ? '+' : '') + (Number.isNaN(rapm) ? '—' : rapm.toFixed(2))}</span>
             <span style={S.statLabel}>RAPM±</span>
           </div>
-          <div style={S.stat}>
-            <span style={S.statVal}>{usg}</span>
-            <span style={S.statLabel}>USG%</span>
-          </div>
-          <div style={S.stat}>
-            <span style={S.statVal}>{p.poss ? Math.round(p.poss) : '—'}</span>
-            <span style={S.statLabel}>Poss</span>
-          </div>
+          <div style={S.stat}><span style={S.statVal}>{usg}</span><span style={S.statLabel}>USG%</span></div>
+          <div style={S.stat}><span style={S.statVal}>{p.poss ? Math.round(p.poss) : '—'}</span><span style={S.statLabel}>Poss</span></div>
         </div>
       </div>
     </Link>
@@ -221,8 +272,7 @@ export default function CbbPlayers() {
   useEffect(() => {
     let alive = true;
     (async () => {
-      const all = await fetchAll((lo, hi) =>
-        supabase.from('cbb_player_stats').select('season').range(lo, hi));
+      const all = await fetchAll((lo, hi) => supabase.from('cbb_player_stats').select('season').range(lo, hi));
       if (!alive) return;
       const uniq = [...new Set(all.map((r) => r.season).filter(Boolean))].sort().reverse();
       setSeasons(uniq);
@@ -248,28 +298,24 @@ export default function CbbPlayers() {
       const byId = new Map();
       for (const r of rosters) if (r.athlete_id != null) byId.set(String(r.athlete_id), r);
 
-      const pct = detectScale(stats, ['pctile_adj_rapm_margin', 'pctile_off_efg', 'pctile_off_assist', 'pctile_off_style_post_up_ppp']);
+      const pct = detectScale(stats, ['pctile_adj_rapm_margin', 'pctile_off_efg', 'pctile_off_assist', 'pctile_off_usage']);
       const usg = detectScale(stats, ['off_usage']);
       setScales({ pct, usg });
 
       setRows(stats.map((s) => {
         const id = s.player_id != null ? String(Math.trunc(+s.player_id)) : null;
         const r = id ? byId.get(id) : null;
-        return {
-          ...s,
-          player_id: id,
+        return { ...s, player_id: id,
           headshot: r && headKey ? r[headKey] : null,
           logo: r && logoKey ? r[logoKey] : null,
-          poss: (+s.off_poss || 0) + (+s.def_poss || 0),
-        };
+          poss: (+s.off_poss || 0) + (+s.def_poss || 0) };
       }));
       setLoading(false);
     })();
     return () => { alive = false; };
   }, [season]);
 
-  const conferences = useMemo(
-    () => ['All', ...[...new Set(rows.map((r) => r.conf).filter(Boolean))].sort()], [rows]);
+  const conferences = useMemo(() => ['All', ...[...new Set(rows.map((r) => r.conf).filter(Boolean))].sort()], [rows]);
   const teams = useMemo(() => {
     const pool = conf === 'All' ? rows : rows.filter((r) => r.conf === conf);
     return ['All', ...[...new Set(pool.map((r) => r.team).filter(Boolean))].sort()];
@@ -305,10 +351,8 @@ export default function CbbPlayers() {
           <div>
             <div style={S.eyebrow}>NCAA · Division I</div>
             <h1 style={S.title}>Player Board</h1>
-            <p style={S.sub}>
-              Every player carries an archetype and a six-spoke percentile profile.
-              Filter by conference and team, then open a card for the full sheet.
-            </p>
+            <p style={S.sub}>Every player carries an archetype and a six-spoke percentile profile.
+              Filter by conference and team, then open a card for the full sheet.</p>
           </div>
           <div style={S.countWrap}>
             <span style={S.count}>{filtered.length}</span>
@@ -350,8 +394,7 @@ export default function CbbPlayers() {
             {visible < filtered.length && (
               <div style={{ textAlign: 'center', marginTop: 28 }}>
                 <button style={S.loadMore} onClick={() => setVisible((v) => v + BATCH)}>
-                  Load more ({filtered.length - visible} left)
-                </button>
+                  Load more ({filtered.length - visible} left)</button>
               </div>
             )}
           </>
@@ -386,7 +429,7 @@ const S = {
   name: { fontSize: 15, fontWeight: 700, lineHeight: 1.2, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' },
   teamLine: { fontSize: 12, color: '#6b7280', margin: '3px 0 5px' },
   posBadge: { display: 'inline-block', fontSize: 10, fontWeight: 700, letterSpacing: 0.5, textTransform: 'uppercase', padding: '1px 7px', border: '1px solid', borderRadius: 5 },
-  archetype: { fontSize: 12.5, padding: '7px 11px', border: '1px solid', borderRadius: 9, marginBottom: 10, display: 'flex', gap: 5, alignItems: 'baseline', flexWrap: 'wrap' },
+  archetype: { fontSize: 12.5, padding: '7px 11px', border: '1px solid', borderRadius: 9, marginBottom: 10, display: 'flex', gap: 5, alignItems: 'baseline', flexWrap: 'wrap', cursor: 'help' },
   qualifier: { fontSize: 11, color: '#6b7280', textTransform: 'uppercase', letterSpacing: 0.5, fontWeight: 600 },
   radarWrap: { display: 'flex', justifyContent: 'center', margin: '4px 0 12px' },
   statRow: { display: 'flex', justifyContent: 'space-between', borderTop: '1px solid rgba(0,0,0,0.07)', paddingTop: 11 },
