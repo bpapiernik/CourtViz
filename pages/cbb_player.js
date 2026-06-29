@@ -47,13 +47,19 @@ const avg = (...xs) => {
   return v.length ? v.reduce((a, b) => a + b, 0) / v.length : 0;
 };
 
+// Defensive rating is "lower is better." If your pctile_def_adj_rtg is a
+// percentile of the RAW rating (so 99th = highest rating = WORST defender),
+// flip this to false and the Def spoke inverts. Sanity check: pull up a known
+// lockdown defender — their Def spoke should be LONG, not stubby.
+const DEF_RATING_HIGHER_IS_BETTER = true;
+
 const RADAR = [
-  { key: 'Score',  get: (r) => +r.pctile_off_efg || 0 },
   { key: 'Shoot',  get: (r) => +r.pctile_off_threep || 0 },
+  { key: 'Finish', get: (r) => +r.pctile_off_twoprim || 0 },   // rim FG%
   { key: 'Pass',   get: (r) => +r.pctile_off_assist || 0 },
   { key: 'Reb',    get: (r) => avg(r.pctile_off_reb, r.pctile_def_reb) },
-  { key: 'Def',    get: (r) => avg(r.pctile_def_stl, r.pctile_def_blk) },
-  { key: 'Impact', get: (r) => +r.pctile_adj_rapm_margin || 0 },
+  { key: 'Def',    get: (r) => +r.pctile_def_adj_rtg || 0, invert: !DEF_RATING_HIGHER_IS_BETTER },
+  { key: 'Volume', get: (r) => +r.pctile_off_usage || 0 },
 ];
 
 const BASE_COLS = [
@@ -63,6 +69,8 @@ const BASE_COLS = [
   'pctile_adj_rapm_margin', 'pctile_off_efg', 'pctile_off_threep',
   'pctile_off_assist', 'pctile_off_reb', 'pctile_def_reb',
   'pctile_def_stl', 'pctile_def_blk',
+  // radar:
+  'pctile_off_twoprim', 'pctile_def_adj_rtg',
   // archetype features:
   'pctile_off_usage', 'pctile_off_threepr', 'pctile_off_twoprimr',
   'pctile_off_ftr', 'pctile_off_orb',
@@ -191,7 +199,11 @@ function Radar({ row, color, scale, size = 132 }) {
     const a = -Math.PI / 2 + (i * 2 * Math.PI) / n;
     return [c + Math.cos(a) * r, c + Math.sin(a) * r];
   };
-  const vals = RADAR.map((m) => Math.max(0, Math.min(100, m.get(row) * scale)));
+  const vals = RADAR.map((m) => {
+    let v = Math.max(0, Math.min(100, m.get(row) * scale));
+    if (m.invert) v = 100 - v;
+    return v;
+  });
   const poly = vals.map((v, i) => pt(i, (v / 100) * R).join(',')).join(' ');
   return (
     <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`} style={{ display: 'block' }}>
