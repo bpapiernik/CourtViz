@@ -72,6 +72,15 @@ function pctRank(sortedAsc, v) {
   return (lo / sortedAsc.length) * 100;
 }
 
+// Defensive stats we rank ourselves (stored pctile_* are unreliable).
+// higherBetter:false inverts so green = good (e.g. fewer fouls).
+const DEF_COLS = [
+  { key: 'stl',  col: 'def_stl', higherBetter: true },
+  { key: 'blk',  col: 'def_blk', higherBetter: true },
+  { key: 'reb',  col: 'def_reb', higherBetter: true },
+  { key: 'foul', col: 'def_fc',  higherBetter: false },
+];
+
 /* ── Archetype engine (mirrors cbb_player.js) ─────────────────────────── */
 const MIN_CONFIDENCE = 0.42;
 function features(row) {
@@ -200,7 +209,7 @@ export default function CbbPlayer() {
   const [roster, setRoster] = useState([]);
   const [usgScale, setUsgScale] = useState(100);
   const [season, setSeason] = useState('');
-  const [drebDist, setDrebDist] = useState([]); // season-wide def_reb, sorted asc
+  const [dists, setDists] = useState({}); // { def_stl:[...], def_blk:[...], def_reb:[...], def_fc:[...] } sorted asc
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -221,16 +230,18 @@ export default function CbbPlayer() {
     return () => { alive = false; };
   }, [id]);
 
-  // Season-wide def_reb so we can rank this player ourselves (the stored
-  // pctile_def_reb is unreliable). One numeric column, ~5k rows. Add a
+  // Season-wide defensive stats so we can rank this player ourselves (stored
+  // pctile_def_* are unreliable). Four numeric columns, ~5k rows. Add a
   // possession floor here if you want to match a "qualified players" pool.
   useEffect(() => {
     if (!season) return;
     let alive = true;
     (async () => {
-      const all = await fetchAll((lo, hi) => supabase.from('cbb_player_stats').select('def_reb').eq('season', season).range(lo, hi));
+      const all = await fetchAll((lo, hi) => supabase.from('cbb_player_stats').select('def_stl, def_blk, def_reb, def_fc').eq('season', season).range(lo, hi));
       if (!alive) return;
-      setDrebDist(all.map((r) => +r.def_reb).filter((v) => !Number.isNaN(v)).sort((a, b) => a - b));
+      const out = {};
+      for (const d of DEF_COLS) out[d.col] = all.map((r) => +r[d.col]).filter((v) => !Number.isNaN(v)).sort((a, b) => a - b);
+      setDists(out);
     })();
     return () => { alive = false; };
   }, [season]);
@@ -238,7 +249,14 @@ export default function CbbPlayer() {
   const seasons = useMemo(() => [...new Set(rows.map((r) => r.season).filter(Boolean))].sort().reverse(), [rows]);
   const row = useMemo(() => rows.find((r) => r.season === season) || rows[0] || null, [rows, season]);
   const bio = useMemo(() => roster.find((r) => r.season === season) || roster[0] || null, [roster, season]);
-  const drebPctile = useMemo(() => (row ? pctRank(drebDist, +row.def_reb) : null), [drebDist, row]);
+  const defPct = useMemo(() => {
+    const out = {};
+    if (row) for (const d of DEF_COLS) {
+      const r = pctRank(dists[d.col] || [], +row[d.col]);
+      out[d.key] = r == null ? null : (d.higherBetter ? r : 100 - r);
+    }
+    return out;
+  }, [dists, row]);
 
   const playData = useMemo(() => {
     if (!row) return { rows: [], maxFreq: 0 };
@@ -392,10 +410,10 @@ export default function CbbPlayer() {
           <section style={S.card}>
             <h2 style={S.h2}>Defense & Hustle</h2>
             <PctBar label="Def Rtg" pctile={DEF_RATING_HIGHER_IS_BETTER ? normPct(row.pctile_def_adj_rtg) : 100 - normPct(row.pctile_def_adj_rtg)} value={fmt(row.def_adj_rtg, 1)} />
-            <PctBar label="Steal%" pctile={normPct(row.pctile_def_stl)} value={rate('def_stl', 1)} />
-            <PctBar label="Block%" pctile={normPct(row.pctile_def_blk)} value={rate('def_blk', 1)} />
-            <PctBar label="D-Reb%" pctile={drebPctile ?? normPct(row.pctile_def_reb)} value={rate('def_reb', 1)} />
-            <PctBar label="Foul%" pctile={normPct(row.pctile_def_fc)} value={fmt(row.def_fc, 1)} />
+            <PctBar label="Steal%" pctile={defPct.stl ?? normPct(row.pctile_def_stl)} value={rate('def_stl', 1)} />
+            <PctBar label="Block%" pctile={defPct.blk ?? normPct(row.pctile_def_blk)} value={rate('def_blk', 1)} />
+            <PctBar label="D-Reb%" pctile={defPct.reb ?? normPct(row.pctile_def_reb)} value={rate('def_reb', 1)} />
+            <PctBar label="Foul%" pctile={defPct.foul ?? normPct(row.pctile_def_fc)} value={fmt(row.def_fc, 1)} />
             <PctBar label="Def RAPM" pctile={normPct(row.pctile_def_adj_rapm)} value={fmt(row.def_adj_rapm, 2)} />
           </section>
         </div>
