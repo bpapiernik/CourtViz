@@ -220,11 +220,11 @@ const POSITION_COLORS = {
   'Forward-Center': '#d97706',
 };
  
-// ─── Component ───────────────────────────────────────────────────────────────
+// Component 
 export default function PlayerPage() {
   const { id } = useRouter().query;
  
-  // ── All state identical to original ──────────────────────────────────────
+  // All states and their preloaded option
   const [playerInfo, setPlayerInfo] = useState(null);
   const [headshotUrl, setHeadshotUrl] = useState(null);
   const [seasons, setSeasons] = useState([]);
@@ -251,7 +251,7 @@ export default function PlayerPage() {
   const [shotChartSeason, setShotChartSeason] = useState('');
   const [shotChartBins, setShotChartBins] = useState([]);
  
-  // ── All useEffects identical to original ─────────────────────────────────
+  // All useEffects for fetching data and merging
   useEffect(() => {
     if (!id) return;
     const fetchPlayerData = async () => {
@@ -356,7 +356,7 @@ export default function PlayerPage() {
     fetchShotChart();
   }, [id, shotChartSeason]);
  
-  // ── Derived values for UI ─────────────────────────────────────────────────
+  // Derived values for UI
   const posColor = POSITION_COLORS[playerInfo?.position] || '#94a3b8';
  
   const selectStyle = {
@@ -389,7 +389,7 @@ export default function PlayerPage() {
     padding: '14px 16px',
   };
  
-  // ── JSX ───────────────────────────────────────────────────────────────────
+  // JSX 
   return (
     <>
       <style>{`
@@ -407,7 +407,7 @@ export default function PlayerPage() {
  
       <div style={{ maxWidth: 1400, margin: '0 auto', padding: '28px 20px' }}>
  
-        {/* ── PLAYER HEADER ─────────────────────────────────────────────── */}
+        {/* PLAYER HEADER */}
         {playerInfo && (
           <div
             className="fade-up"
@@ -495,7 +495,7 @@ export default function PlayerPage() {
           </div>
         )}
  
-        {/* ── SYNERGY + SHOT CHART ROW ───────────────────────────────────── */}
+        {/* SYNERGY + SHOT CHART ROW*/}
         <div style={{ display: 'flex', gap: 20, marginBottom: 24, flexWrap: 'wrap' }}>
  
           {/* Synergy block */}
@@ -613,7 +613,7 @@ export default function PlayerPage() {
           </div>
         </div>
  
-        {/* ── PERCENTILE CONTROLS CARD ───────────────────────────────────── */}
+        {/* PERCENTILE CONTROLS CARD*/}
         <div style={{ ...sectionCardStyle, marginBottom: 20 }}>
           <div style={{
             fontSize: 10, fontWeight: 700, fontFamily: 'var(--font-mono)',
@@ -644,7 +644,7 @@ export default function PlayerPage() {
           </div>
         </div>
  
-        {/* ── PERCENTILE COLUMNS ────────────────────────────────────────── */}
+        {/* PERCENTILE COLUMNS */}
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: 16 }}>
           {[
             { label: 'Overall',                      sublabel: selectedSeason,          data: percentiles,    group: selectedGroup,    setGroup: setSelectedGroup },

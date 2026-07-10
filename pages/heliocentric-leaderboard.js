@@ -59,7 +59,7 @@ export default function HeliocentricLeaderboard() {
   const [posFilter, setPosFilter]               = useState('All');
   const [infoOpen, setInfoOpen]                 = useState(false);
 
-  // ── Fetch leaderboard types ───────────────────────────────────────────────
+  //  Fetch leaderboard types 
   useEffect(() => {
     const fetchLeaderboardTypes = async () => {
       const batchSize = 1000;
@@ -80,7 +80,7 @@ export default function HeliocentricLeaderboard() {
     fetchLeaderboardTypes();
   }, []);
 
-  // ── Fetch leaderboard data ────────────────────────────────────────────────
+  // Fetch leaderboard data
   useEffect(() => {
     if (!leaderboardType) return;
     setLoading(true);
@@ -150,7 +150,7 @@ export default function HeliocentricLeaderboard() {
     );
   };
 
-  // ── Filter + sort ─────────────────────────────────────────────────────────
+  // Filter + sort 
   const filteredData = useMemo(() => {
     return leaderboardData.filter(row => {
       if (row.good_decision_pct * 100 < filters.good)     return false;
@@ -179,7 +179,7 @@ export default function HeliocentricLeaderboard() {
     });
   }, [filteredData, sortConfig]);
 
-  // ── Styles ────────────────────────────────────────────────────────────────
+  // Styles 
   const inputStyle = {
     background: 'transparent',
     border: '1.5px solid color-mix(in srgb, var(--foreground) 20%, transparent)',

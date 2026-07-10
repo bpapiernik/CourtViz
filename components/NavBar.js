@@ -104,7 +104,7 @@ export default function NavBar() {
       }}>
         <div style={{ maxWidth: 1400, margin: '0 auto', padding: '0 20px' }}>
  
-          {/* ── Desktop ─────────────────────────────────────────────────── */}
+          {/* Desktop */}
           <div style={{
             display: 'flex',
             justifyContent: 'space-between',
@@ -141,7 +141,7 @@ export default function NavBar() {
             </div>
           </div>
  
-          {/* ── Mobile ──────────────────────────────────────────────────── */}
+          {/*Mobile*/}
           <div style={{
             display: 'none',
             justifyContent: 'space-between',

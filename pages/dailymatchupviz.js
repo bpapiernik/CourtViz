@@ -25,7 +25,7 @@ export default function DailyMatchupViz() {
   const [officialRecord, setOfficialRecord] = useState({ wins: 0, losses: 0, pushes: 0, winPct: null });
   const [yesterdayRecord, setYesterdayRecord] = useState({ wins: 0, losses: 0, pushes: 0, winPct: null });
 
-  // ── Helpers ──────────────────────────────────────────────────────────────
+  // Helper functions
   const getTodayCTIso = () => {
     const parts = new Intl.DateTimeFormat("en-CA", {
       timeZone: "America/Chicago",
@@ -58,7 +58,7 @@ export default function DailyMatchupViz() {
     return diff > 0 ? `${r.away} -${lineText}` : `${r.home} +${lineText}`;
   };
 
-  // ── Fetch teams + historic odds ───────────────────────────────────────────
+  // Fetch teams + historic odds
   useEffect(() => {
     async function fetchTeams() {
       const batchSize = 1000;
@@ -85,7 +85,7 @@ export default function DailyMatchupViz() {
     fetchHistoricOdds();
   }, []);
 
-  // ── Default date range ────────────────────────────────────────────────────
+  // Default date range
   useEffect(() => {
     const todayCT = getTodayCTIso();
     const dt = new Date(`${todayCT}T00:00:00`);
@@ -104,7 +104,7 @@ export default function DailyMatchupViz() {
     }
   }, [source]);
 
-  // ── Expected spread text ──────────────────────────────────────────────────
+  // Expected spread text
   const expectedSpreadText = useMemo(() => {
     if (!result || result.error) return null;
     if (!historicOdds || historicOdds.length === 0) return null;
@@ -124,7 +124,7 @@ export default function DailyMatchupViz() {
     return { team: favoriteTeam, line: lineText };
   }, [result, historicOdds]);
 
-  // ── Simulate ──────────────────────────────────────────────────────────────
+  // Simulate
   const simulateLiveMatchup = async () => {
     if (!team1 || !team2) return;
     setSimLoading(true);
@@ -145,7 +145,7 @@ export default function DailyMatchupViz() {
     }
   };
 
-  // ── Fetch matchups ────────────────────────────────────────────────────────
+  // Fetch matchups 
   const fetchMatchups = async () => {
     setMatchupsLoading(true);
     setMatchups([]);
@@ -185,7 +185,7 @@ export default function DailyMatchupViz() {
     if (fromDate && toDate) fetchMatchups();
   }, [fromDate, toDate, source]);
 
-  // ── Official record ───────────────────────────────────────────────────────
+  // Official record 
   useEffect(() => {
     async function fetchOfficialRecord() {
       const todayCT = getTodayCTIso();
@@ -243,7 +243,7 @@ export default function DailyMatchupViz() {
     fetchYesterdayRecord();
   }, []);
 
-  // ── Filters + sort ────────────────────────────────────────────────────────
+  // Filters + sort 
   const filteredMatchups = useMemo(() => {
     const s = searchText.trim().toLowerCase();
     const h = homeContains.trim().toLowerCase();
@@ -298,13 +298,13 @@ export default function DailyMatchupViz() {
     else { setSortKey(key); setSortDir("asc"); }
   };
 
-  // ── Derived sim values ────────────────────────────────────────────────────
+  // Derived sim values 
   const t1prob = result ? Number(result.team1_win_prob) : null;
   const t2prob = result ? Number(result.team2_win_prob) : null;
   const winner = result && t1prob != null && t2prob != null
     ? (t1prob >= t2prob ? result.team1 : result.team2) : null;
 
-  // ── Shared styles ─────────────────────────────────────────────────────────
+  // Shared styles 
   const inputStyle = {
     background: "transparent",
     border: "1.5px solid color-mix(in srgb, var(--foreground) 20%, transparent)",
@@ -391,7 +391,7 @@ export default function DailyMatchupViz() {
 
       <div style={{ maxWidth: 1200, margin: "0 auto", padding: "32px 20px" }}>
 
-        {/* ── SIMULATOR ─────────────────────────────────────────────────── */}
+        {/* SIMULATOR */}
         <div style={{ maxWidth: 700, margin: "0 auto 48px" }}>
           <div style={{ textAlign: "center", marginBottom: 28 }}>
             <div style={{ fontSize: 28, marginBottom: 6 }}>🏀</div>
@@ -562,7 +562,7 @@ export default function DailyMatchupViz() {
           )}
         </div>
 
-        {/* ── DAILY MATCHUPS ────────────────────────────────────────────── */}
+        {/* DAILY MATCHUPS  */}
         <div>
           {/* Section header + record badges */}
           <div style={{ marginBottom: 20 }}>

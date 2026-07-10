@@ -95,7 +95,7 @@ export default function Home() {
 
       <div style={{ maxWidth: 860, margin: '0 auto', padding: '40px 20px' }}>
 
-        {/* ── HERO ──────────────────────────────────────────────────────── */}
+        {/* HERO */}
         <div className="fade-up" style={{ marginBottom: 48 }}>
 
           {/* Top row: logo+tagline left, player of day right */}
@@ -186,7 +186,7 @@ export default function Home() {
           </div>
         </div>
 
-        {/* ── ABOUT ME ──────────────────────────────────────────────────── */}
+        {/* ABOUT ME */}
         <section style={{ marginBottom: 48 }} className="fade-up">
           <div style={{ fontSize: 10, fontWeight: 700, fontFamily: 'var(--font-mono)', letterSpacing: 2, textTransform: 'uppercase', opacity: 0.4, marginBottom: 14 }}>
             About Me
@@ -232,7 +232,7 @@ export default function Home() {
           </div>
         </section>
 
-        {/* ── ABOUT COURTVIZ ────────────────────────────────────────────── */}
+        {/* ABOUT COURTVIZ  */}
         <section style={{ marginBottom: 48 }} className="fade-up">
           <div style={{ fontSize: 10, fontWeight: 700, fontFamily: 'var(--font-mono)', letterSpacing: 2, textTransform: 'uppercase', opacity: 0.4, marginBottom: 14 }}>
             About CourtViz
@@ -268,7 +268,7 @@ export default function Home() {
 
 
 
-        {/* ── FORMER PROJECTS ───────────────────────────────────────────── */}
+        {/* FORMER PROJECTS */}
         <section className="fade-up">
           <div style={{ fontSize: 10, fontWeight: 700, fontFamily: 'var(--font-mono)', letterSpacing: 2, textTransform: 'uppercase', opacity: 0.4, marginBottom: 14 }}>
             Former Portfolio Projects

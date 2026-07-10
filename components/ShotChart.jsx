@@ -2,7 +2,7 @@ import { useEffect, useRef, useMemo } from 'react';
 import * as d3 from 'd3';
 import { hexbin as d3Hexbin } from 'd3-hexbin';
 
-// ── Color scale: blue=cold, cream=neutral, red=hot (matches reference) ───────
+// Color scale: blue=cold, cream=neutral, red=hot (matches reference)
 const COLOR_SCALE = d3.scaleSequential()
   .domain([-0.12, 0.12])
   .interpolator(d3.interpolateRgbBasis([
@@ -15,11 +15,11 @@ const COLOR_SCALE = d3.scaleSequential()
     '#7a0000',  // dark red
   ]));
 
-// ── Court dimensions in feet ─────────────────────────────────────────────────
+// Court dimensions in feet 
 const COURT_W = 50;   // -25 to +25
 const COURT_H = 47.5; // -4.75 to 42.75
 
-// ── Draw NBA half-court ───────────────────────────────────────────────────────
+// Draw NBA half-court 
 // Translated directly from working Plotly court (tenths-of-feet ÷ 10 = feet)
 // sx: feet → SVG x,  sy: feet → SVG y (basket at bottom, halfcourt at top)
 function drawCourt(g, sx, sy, color = '#9ca3af', lw = 1.2) {
@@ -114,7 +114,7 @@ function drawCourt(g, sx, sy, color = '#9ca3af', lw = 1.2) {
     .attr('fill', 'none').attr('stroke', color).attr('stroke-width', lw);
 }
 
-// ── Component ─────────────────────────────────────────────────────────────────
+// Component 
 export default function ShotChart({ bins }) {
   const svgRef = useRef(null);
   const tipRef = useRef(null);
@@ -210,7 +210,7 @@ export default function ShotChart({ bins }) {
         if (tipRef.current) tipRef.current.style.opacity = '0';
       });
 
-    // ── Colorbar ─────────────────────────────────────────────────────────────
+    // Colorbar 
     const cbH = 120, cbW = 10;
     const cbX = innerW + 12, cbY = innerH / 2 - cbH / 2;
 
