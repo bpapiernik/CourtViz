@@ -29,6 +29,7 @@ export default function NavBar() {
     { href: '/dailymatchupviz',          label: 'Daily MatchupViz' },
     { href: '/heliocentric-leaderboard', label: 'Heliocentric Leaderboard' },
     { href: '/bracket',                  label: 'Bracket' },
+    { href: '/cbb_player',               label: 'CBB Players' },
   ];
  
   const isActive = (href) => {
