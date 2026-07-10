@@ -5,11 +5,7 @@
 //
 // PERCENTILE SCALING: source pctile_* columns are mixed-scale (most 0–1,
 // some 0–100, e.g. pctile_def_fc). normPct() normalizes per value so it
-// works regardless — anything ≤1 is treated as a fraction and ×100'd.
-// (Cleaner long-term: make all pctile_ columns one scale in your pipeline.)
-//
-// THEME: warm "paper" cards via the PAPER/LINE/TRACK consts below — tweak
-// those to retune every surface at once.
+// 
 
 import { useEffect, useMemo, useState } from 'react';
 import { useRouter } from 'next/router';
@@ -18,7 +14,7 @@ import { supabase } from '../../lib/supabaseClient';
 
 const DEF_RATING_HIGHER_IS_BETTER = true;
 
-// ── warm surface tokens ───────────────────────────────────────────────
+// warm surface tokens 
 const PAPER = '#fbf8f1';
 const PAPER2 = '#f6f1e6';
 const LINE = 'rgba(86,64,30,0.14)';
@@ -81,7 +77,7 @@ const DEF_COLS = [
   { key: 'foul', col: 'def_fc',  higherBetter: false },
 ];
 
-/* ── Archetype engine (mirrors cbb_player.js) ─────────────────────────── */
+/* Archetype engine (mirrors cbb_player.js)  */
 const MIN_CONFIDENCE = 0.42;
 function features(row) {
   const P = (c) => clamp01(normPct(row[c]) / 100);
@@ -147,7 +143,7 @@ async function fetchAll(buildQuery) {
   return rows;
 }
 
-/* ── UI atoms ─────────────────────────────────────────────────────────── */
+/* UI atoms */
 function Radar({ row, color, size = 200 }) {
   const c = size / 2, R = size / 2 - 26, n = RADAR.length;
   const pt = (i, r) => { const a = -Math.PI / 2 + (i * 2 * Math.PI) / n; return [c + Math.cos(a) * r, c + Math.sin(a) * r]; };
@@ -200,7 +196,7 @@ function PlayScatter({ data, maxFreq }) {
   );
 }
 
-/* ── Page ─────────────────────────────────────────────────────────────── */
+/* Page  */
 export default function CbbPlayer() {
   const router = useRouter();
   const { id } = router.query;
