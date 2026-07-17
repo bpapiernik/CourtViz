@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 
 export function middleware(request) {
   const userAgent = request.headers.get("user-agent") || "";
+  
 
   const isBot =
     /bot|crawler|spider|facebookexternalhit|facebot|twitterbot|bingbot|googlebot|claudebot|gptbot|applebot|slackbot|discordbot|linkedinbot/i.test(
