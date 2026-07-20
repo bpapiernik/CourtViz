@@ -15,6 +15,10 @@ export function middleware(request) {
     region: request.headers.get("x-vercel-ip-country-region"),
     country: request.headers.get("x-vercel-ip-country"),
     path: request.nextUrl.pathname,
+    referer: request.headers.get("referer"),
+    acceptLanguage: request.headers.get("accept-language"),
+    secFetchSite: request.headers.get("sec-fetch-site"),
+    secFetchMode: request.headers.get("sec-fetch-mode"),
     userAgent,
   });
 
