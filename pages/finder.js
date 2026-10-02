@@ -122,8 +122,8 @@ const availableStats = [
 ];
 
 const SEASONS = [
-  '2025-26', '2024-25','2023-24','2022-23','2021-22','2020-21',
-  '2019-20','2018-19','2017-18','2016-17','2015-16',
+  '2025-26', '2024-25', '2023-24', '2022-23', '2021-22', '2020-21',
+  '2019-20', '2018-19', '2017-18', '2016-17', '2015-16',
 ];
 
 function pctColor(val) {
@@ -134,15 +134,15 @@ function pctColor(val) {
 }
 
 export default function Finder() {
-  const [ageMin, setAgeMin]       = useState(18);
-  const [ageMax, setAgeMax]       = useState(25);
-  const [season, setSeason]       = useState('2024-25');
+  const [ageMin, setAgeMin] = useState(18);
+  const [ageMax, setAgeMax] = useState(25);
+  const [season, setSeason] = useState('2024-25');
   const [statFilters, setStatFilters] = useState([
     { stat: 'CATCH_SHOOT_EFG_PCT_CatchShoot_pct', min: 50 },
   ]);
-  const [results, setResults]     = useState([]);
-  const [loading, setLoading]     = useState(false);
-  const [searched, setSearched]   = useState(false);
+  const [results, setResults] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [searched, setSearched] = useState(false);
 
   const handleSearch = async () => {
     setLoading(true);
@@ -171,47 +171,58 @@ export default function Finder() {
 
     if (ageError) { console.error(ageError); setLoading(false); return; }
 
-    const seasonAgeMap = new Map((ageData || []).map(p => [p.PLAYER_ID, p.age]));
+    const seasonAgeMap = new Map();
+    (ageData || []).forEach(p => {
+      if (!seasonAgeMap.has(String(p.PLAYER_ID))) seasonAgeMap.set(String(p.PLAYER_ID), p.age);
+    });
+
+    const playerIds = [...new Set((baseData || []).map(p => p.PLAYER_ID).filter(id => id != null))];
 
     const { data: headshotData, error: headshotError } = await supabase
       .from('player_headshots')
-      .select('player_id, headshot');
+      .select('player_id, headshot')
+      .in('player_id', playerIds);
 
-    if (headshotError) { console.error(headshotError); setLoading(false); return; }
+    if (headshotError) { console.error('Headshot error:', headshotError); setLoading(false); return; }
 
-    const headshotMap = new Map((headshotData || []).map(p => [String(p.player_id), p.headshot]));
+    const headshotMap = new Map(
+      (headshotData || [])
+        .filter(p => p.player_id != null && p.headshot)
+        .map(p => [String(p.player_id), p.headshot])
+    );
 
     const playerRowsMap = new Map();
 
     (baseData || []).forEach(player => {
-      if (!playerRowsMap.has(player.PLAYER_ID)) playerRowsMap.set(player.PLAYER_ID, []);
+      const playerId = String(player.PLAYER_ID);
 
-      playerRowsMap.get(player.PLAYER_ID).push({
+      if (!playerRowsMap.has(playerId)) playerRowsMap.set(playerId, []);
+
+      playerRowsMap.get(playerId).push({
         ...player,
-        AGE: seasonAgeMap.get(player.PLAYER_ID) ?? null,
-        HEADSHOT: headshotMap.get(String(player.PLAYER_ID)) || null,
+        AGE: seasonAgeMap.get(playerId) ?? null,
+        HEADSHOT: headshotMap.get(playerId) || null,
         values: valuesMap.get(`${player.PLAYER_ID}-${player.TEAM_ID}`) || {},
       });
     });
 
-    async function fetchAllSynergyRows(season) {
+    async function fetchAllSynergyRows(selectedSeason) {
       const batchSize = 1000;
-      let start = 0, allRows = [];
+      let start = 0;
+      let allRows = [];
 
       while (true) {
         const { data, error } = await supabase
           .from('synergy')
           .select('PLAYER_ID, PLAY_TYPE, TYPE_GROUPING, PPP, SEASON, PERCENTILE')
-          .eq('SEASON', season)
+          .eq('SEASON', selectedSeason)
           .order('PLAYER_ID', { ascending: true })
           .range(start, start + batchSize - 1);
 
         if (error) return { data: null, error };
 
         allRows = allRows.concat(data || []);
-
         if (!data || data.length < batchSize) break;
-
         start += batchSize;
       }
 
@@ -225,8 +236,9 @@ export default function Finder() {
     const synergyMap = new Map();
 
     (synergyAll || []).forEach(row => {
-      if (!synergyMap.has(row.PLAYER_ID)) synergyMap.set(row.PLAYER_ID, []);
-      synergyMap.get(row.PLAYER_ID).push(row);
+      const playerId = String(row.PLAYER_ID);
+      if (!synergyMap.has(playerId)) synergyMap.set(playerId, []);
+      synergyMap.get(playerId).push(row);
     });
 
     const filteredPlayers = [];
@@ -252,7 +264,9 @@ export default function Finder() {
 
       const passesSynergy = synergyFilters.every(filter => {
         const [, typeGroup, playType] = filter.stat.split(':');
-        const match = synergyRows.find(s => s.TYPE_GROUPING === typeGroup && s.PLAY_TYPE === playType);
+        const match = synergyRows.find(
+          s => s.TYPE_GROUPING === typeGroup && s.PLAY_TYPE === playType
+        );
 
         return match?.PERCENTILE != null && Number(match.PERCENTILE) >= filter.min / 100;
       });
@@ -262,6 +276,7 @@ export default function Finder() {
       filteredPlayers.push({
         ...matchingTrackingRow,
         AGE: age,
+        HEADSHOT: headshotMap.get(playerId) || null,
         synergy: synergyRows,
       });
     });
@@ -273,7 +288,7 @@ export default function Finder() {
   const addFilter = () =>
     setStatFilters([...statFilters, { stat: availableStats[0].key, min: 50 }]);
 
-  const removeFilter = (i) =>
+  const removeFilter = i =>
     setStatFilters(statFilters.filter((_, idx) => idx !== i));
 
   const updateFilter = (i, field, value) => {
@@ -323,7 +338,7 @@ export default function Finder() {
 
         @keyframes fadeIn {
           from { opacity: 0; transform: translateY(6px); }
-          to   { opacity: 1; transform: translateY(0); }
+          to { opacity: 1; transform: translateY(0); }
         }
 
         .fade-in { animation: fadeIn 0.25s ease both; }
@@ -331,7 +346,6 @@ export default function Finder() {
 
       <div style={{ maxWidth: 1100, margin: '0 auto', padding: '32px 20px' }}>
 
-        {/* Header */}
         <div style={{ marginBottom: 28 }}>
           <h1 style={{ fontSize: 26, fontWeight: 700, margin: 0 }}>Player Finder</h1>
 
@@ -344,7 +358,6 @@ export default function Finder() {
           </p>
         </div>
 
-        {/* Controls card */}
         <div style={{
           background: 'color-mix(in srgb, var(--navbar) 15%, transparent)',
           border: '1.5px solid color-mix(in srgb, var(--navbar) 50%, transparent)',
@@ -353,7 +366,6 @@ export default function Finder() {
           marginBottom: 24,
         }}>
 
-          {/* Row 1: Season + Age */}
           <div style={{ display: 'flex', gap: 16, flexWrap: 'wrap', marginBottom: 24 }}>
 
             <div style={{ flex: '1 1 160px' }}>
@@ -395,7 +407,6 @@ export default function Finder() {
 
           </div>
 
-          {/* Stat filters */}
           <div style={{ marginBottom: 16 }}>
             <label style={labelStyle}>Stat Filters — Minimum Percentile</label>
 
@@ -482,15 +493,14 @@ export default function Finder() {
                 transition: 'opacity 0.15s',
                 width: '100%',
               }}
-              onMouseEnter={e => e.target.style.opacity = 1}
-              onMouseLeave={e => e.target.style.opacity = 0.6}
+              onMouseEnter={e => e.currentTarget.style.opacity = 1}
+              onMouseLeave={e => e.currentTarget.style.opacity = 0.6}
             >
               + Add Stat Filter
             </button>
 
           </div>
 
-          {/* Search button */}
           <button
             className="search-btn"
             onClick={handleSearch}
@@ -515,7 +525,6 @@ export default function Finder() {
 
         </div>
 
-        {/* Results */}
         {searched && !loading && (
           <div className="fade-in">
 
@@ -618,7 +627,7 @@ export default function Finder() {
                           className="result-row"
                           style={{
                             borderBottom: '1px solid color-mix(in srgb, var(--foreground) 6%, transparent)',
-                            animation: `fadeIn 0.2s ease both`,
+                            animation: 'fadeIn 0.2s ease both',
                             animationDelay: `${Math.min(rowIdx * 20, 400)}ms`,
                           }}
                         >
@@ -639,7 +648,7 @@ export default function Finder() {
                               {player.HEADSHOT && (
                                 <img
                                   src={player.HEADSHOT}
-                                  alt={player.PLAYER_NAME}
+                                  alt={`${player.PLAYER_NAME} headshot`}
                                   width={46}
                                   height={46}
                                   loading="lazy"
@@ -656,7 +665,7 @@ export default function Finder() {
                                 />
                               )}
 
-                              {player.PLAYER_NAME}
+                              <span>{player.PLAYER_NAME}</span>
                             </Link>
                           </td>
 
@@ -681,18 +690,29 @@ export default function Finder() {
                               );
 
                               displayVal = match?.PPP != null ? Number(match.PPP).toFixed(2) : '—';
-                              pct = match?.PERCENTILE != null ? Math.round(Number(match.PERCENTILE) * 100) : null;
+                              pct = match?.PERCENTILE != null
+                                ? Math.round(Number(match.PERCENTILE) * 100)
+                                : null;
 
                             } else {
                               const percentileValue = player[filter.stat];
-                              pct = percentileValue != null ? Math.round(Number(percentileValue) * 100) : null;
+
+                              pct = percentileValue != null
+                                ? Math.round(Number(percentileValue) * 100)
+                                : null;
 
                               const valueKey = filter.stat.replace(/_pct$/, '');
                               const rawVal = player.values?.[valueKey];
 
-                              displayVal = rawVal != null
-                                ? (Number.isInteger(Number(rawVal)) ? Number(rawVal) : Number(rawVal).toFixed(2))
-                                : (pct != null ? `${pct}%` : '—');
+                              if (rawVal != null) {
+                                const numericValue = Number(rawVal);
+
+                                displayVal = Number.isFinite(numericValue)
+                                  ? (Number.isInteger(numericValue) ? numericValue : numericValue.toFixed(2))
+                                  : String(rawVal);
+                              } else {
+                                displayVal = pct != null ? `${pct}%` : '—';
+                              }
                             }
 
                             return (
