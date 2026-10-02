@@ -1,6 +1,5 @@
 // pages/finder.js
-
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { supabase } from '../lib/supabaseClient';
 import Link from 'next/link';
 
@@ -127,7 +126,6 @@ const SEASONS = [
   '2019-20','2018-19','2017-18','2016-17','2015-16',
 ];
 
-// Percentile → color
 function pctColor(val) {
   if (val >= 80) return '#059669';
   if (val >= 60) return '#d97706';
@@ -157,7 +155,6 @@ export default function Finder() {
 
     if (baseError) { console.error(baseError); setLoading(false); return; }
 
-    // Fetch raw values (same columns, no _pct suffix)
     const { data: valuesData, error: valuesError } = await supabase
       .from('playtype_values')
       .select('*')
@@ -165,8 +162,7 @@ export default function Finder() {
 
     if (valuesError) { console.error(valuesError); setLoading(false); return; }
 
-    // PLAYER_ID -> raw values row
-    const valuesMap = new Map((valuesData || []).map(p => [p.PLAYER_ID, p]));
+    const valuesMap = new Map((valuesData || []).map(p => [`${p.PLAYER_ID}-${p.TEAM_ID}`, p]));
 
     const { data: ageData, error: ageError } = await supabase
       .from('playtype_percentiles_age')
@@ -176,15 +172,32 @@ export default function Finder() {
     if (ageError) { console.error(ageError); setLoading(false); return; }
 
     const seasonAgeMap = new Map((ageData || []).map(p => [p.PLAYER_ID, p.age]));
-    const merged = (baseData || []).map(player => ({
-      ...player,
-      AGE: seasonAgeMap.get(player.PLAYER_ID) ?? null,
-    }));
 
-    // Paginate synergy
+    const { data: headshotData, error: headshotError } = await supabase
+      .from('player_headshots')
+      .select('player_id, headshot');
+
+    if (headshotError) { console.error(headshotError); setLoading(false); return; }
+
+    const headshotMap = new Map((headshotData || []).map(p => [String(p.player_id), p.headshot]));
+
+    const playerRowsMap = new Map();
+
+    (baseData || []).forEach(player => {
+      if (!playerRowsMap.has(player.PLAYER_ID)) playerRowsMap.set(player.PLAYER_ID, []);
+
+      playerRowsMap.get(player.PLAYER_ID).push({
+        ...player,
+        AGE: seasonAgeMap.get(player.PLAYER_ID) ?? null,
+        HEADSHOT: headshotMap.get(String(player.PLAYER_ID)) || null,
+        values: valuesMap.get(`${player.PLAYER_ID}-${player.TEAM_ID}`) || {},
+      });
+    });
+
     async function fetchAllSynergyRows(season) {
       const batchSize = 1000;
       let start = 0, allRows = [];
+
       while (true) {
         const { data, error } = await supabase
           .from('synergy')
@@ -192,48 +205,68 @@ export default function Finder() {
           .eq('SEASON', season)
           .order('PLAYER_ID', { ascending: true })
           .range(start, start + batchSize - 1);
+
         if (error) return { data: null, error };
-        allRows = allRows.concat(data);
-        if (data.length < batchSize) break;
+
+        allRows = allRows.concat(data || []);
+
+        if (!data || data.length < batchSize) break;
+
         start += batchSize;
       }
+
       return { data: allRows, error: null };
     }
 
     const { data: synergyAll, error: synergyAllError } = await fetchAllSynergyRows(season);
+
     if (synergyAllError) { console.error(synergyAllError); setLoading(false); return; }
 
-    const ageLookup = new Map(merged.map(p => [p.PLAYER_ID, p.AGE]));
-    const allSynergyRows = (synergyAll || []).map(row => ({
-      ...row,
-      AGE: ageLookup.get(row.PLAYER_ID) ?? null,
-    }));
-
     const synergyMap = new Map();
-    allSynergyRows.forEach(row => {
+
+    (synergyAll || []).forEach(row => {
       if (!synergyMap.has(row.PLAYER_ID)) synergyMap.set(row.PLAYER_ID, []);
       synergyMap.get(row.PLAYER_ID).push(row);
     });
 
-    const filtered = merged.filter(player => {
-      const synergyRows = synergyMap.get(player.PLAYER_ID) || [];
-      const age = player.AGE ?? (synergyRows[0]?.AGE ?? null);
-      if (!age || age > ageMax || age < ageMin) return false;
-      return statFilters.every(filter => {
-        if (filter.stat.startsWith('synergy:')) {
-          const [, typeGroup, playType] = filter.stat.split(':');
-          const match = synergyRows.find(s => s.TYPE_GROUPING === typeGroup && s.PLAY_TYPE === playType);
-          return (match?.PERCENTILE || 0) >= filter.min / 100;
-        }
-        return (player[filter.stat] || 0) >= filter.min / 100;
+    const filteredPlayers = [];
+
+    playerRowsMap.forEach((playerRows, playerId) => {
+      const age = seasonAgeMap.get(playerId) ?? null;
+
+      if (age == null || age > ageMax || age < ageMin) return;
+
+      const synergyRows = synergyMap.get(playerId) || [];
+      const trackingFilters = statFilters.filter(filter => !filter.stat.startsWith('synergy:'));
+      const synergyFilters = statFilters.filter(filter => filter.stat.startsWith('synergy:'));
+
+      const matchingTrackingRow = trackingFilters.length === 0
+        ? playerRows[0]
+        : playerRows.find(row =>
+            trackingFilters.every(filter =>
+              row[filter.stat] != null && Number(row[filter.stat]) >= filter.min / 100
+            )
+          );
+
+      if (!matchingTrackingRow) return;
+
+      const passesSynergy = synergyFilters.every(filter => {
+        const [, typeGroup, playType] = filter.stat.split(':');
+        const match = synergyRows.find(s => s.TYPE_GROUPING === typeGroup && s.PLAY_TYPE === playType);
+
+        return match?.PERCENTILE != null && Number(match.PERCENTILE) >= filter.min / 100;
+      });
+
+      if (!passesSynergy) return;
+
+      filteredPlayers.push({
+        ...matchingTrackingRow,
+        AGE: age,
+        synergy: synergyRows,
       });
     });
 
-    setResults(filtered.map(player => ({
-      ...player,
-      synergy: synergyMap.get(player.PLAYER_ID) || [],
-      values: valuesMap.get(player.PLAYER_ID) || {},
-    })));
+    setResults(filteredPlayers);
     setLoading(false);
   };
 
@@ -249,7 +282,6 @@ export default function Finder() {
     setStatFilters(next);
   };
 
-  // Shared input style
   const inputStyle = {
     background: 'transparent',
     border: '1.5px solid color-mix(in srgb, var(--foreground) 20%, transparent)',
@@ -281,15 +313,19 @@ export default function Finder() {
           border-color: var(--navbar) !important;
           box-shadow: 0 0 0 3px color-mix(in srgb, var(--navbar) 25%, transparent);
         }
+
         .result-row:hover {
           background: color-mix(in srgb, var(--navbar) 18%, transparent);
         }
+
         .remove-btn:hover { opacity: 1 !important; }
         .search-btn:hover { opacity: 0.88; }
+
         @keyframes fadeIn {
           from { opacity: 0; transform: translateY(6px); }
           to   { opacity: 1; transform: translateY(0); }
         }
+
         .fade-in { animation: fadeIn 0.25s ease both; }
       `}</style>
 
@@ -298,9 +334,11 @@ export default function Finder() {
         {/* Header */}
         <div style={{ marginBottom: 28 }}>
           <h1 style={{ fontSize: 26, fontWeight: 700, margin: 0 }}>Player Finder</h1>
+
           <p style={{ margin: '4px 0 0', fontSize: 13, opacity: 0.45 }}>
-            Filter players by age, season, and percentile thresholds across tracking and synergy stats. 
+            Filter players by age, season, and percentile thresholds across tracking and synergy stats.
           </p>
+
           <p style={{ margin: 0, fontSize: 13, opacity: 0.45 }}>
             Click any player to view their full stats page.
           </p>
@@ -317,8 +355,10 @@ export default function Finder() {
 
           {/* Row 1: Season + Age */}
           <div style={{ display: 'flex', gap: 16, flexWrap: 'wrap', marginBottom: 24 }}>
+
             <div style={{ flex: '1 1 160px' }}>
               <label style={labelStyle}>Season</label>
+
               <select
                 className="finder-input"
                 value={season}
@@ -328,8 +368,10 @@ export default function Finder() {
                 {SEASONS.map(s => <option key={s} value={s}>{s}</option>)}
               </select>
             </div>
+
             <div style={{ flex: '1 1 100px' }}>
               <label style={labelStyle}>Min Age</label>
+
               <input
                 className="finder-input"
                 type="number"
@@ -338,8 +380,10 @@ export default function Finder() {
                 style={inputStyle}
               />
             </div>
+
             <div style={{ flex: '1 1 100px' }}>
               <label style={labelStyle}>Max Age</label>
+
               <input
                 className="finder-input"
                 type="number"
@@ -348,6 +392,7 @@ export default function Finder() {
                 style={inputStyle}
               />
             </div>
+
           </div>
 
           {/* Stat filters */}
@@ -355,9 +400,14 @@ export default function Finder() {
             <label style={labelStyle}>Stat Filters — Minimum Percentile</label>
 
             <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+
               {statFilters.map((filter, i) => (
-                <div key={i} className="fade-in" style={{ display: 'flex', gap: 10, alignItems: 'center', flexWrap: 'wrap' }}>
-                  {/* Stat selector */}
+                <div
+                  key={i}
+                  className="fade-in"
+                  style={{ display: 'flex', gap: 10, alignItems: 'center', flexWrap: 'wrap' }}
+                >
+
                   <select
                     className="finder-input"
                     value={filter.stat}
@@ -369,6 +419,7 @@ export default function Finder() {
                         <option key={s.key} value={s.key}>{s.label}</option>
                       ))}
                     </optgroup>
+
                     <optgroup label="Synergy">
                       {availableStats.filter(s => s.source === 'synergy').map(s => (
                         <option key={s.key} value={s.key}>{s.label}</option>
@@ -376,9 +427,9 @@ export default function Finder() {
                     </optgroup>
                   </select>
 
-                  {/* Min percentile input + bar */}
                   <div style={{ display: 'flex', alignItems: 'center', gap: 8, flex: '0 0 auto' }}>
                     <span style={{ fontSize: 11, opacity: 0.45, fontFamily: 'var(--font-mono)' }}>≥</span>
+
                     <input
                       className="finder-input"
                       type="number"
@@ -388,10 +439,10 @@ export default function Finder() {
                       onChange={e => updateFilter(i, 'min', Number(e.target.value))}
                       style={{ ...inputStyle, width: 64, textAlign: 'center' }}
                     />
+
                     <span style={{ fontSize: 11, opacity: 0.45, fontFamily: 'var(--font-mono)' }}>%ile</span>
                   </div>
 
-                  {/* Remove */}
                   <button
                     className="remove-btn"
                     onClick={() => removeFilter(i)}
@@ -406,9 +457,13 @@ export default function Finder() {
                       opacity: 0.6,
                       transition: 'opacity 0.15s',
                     }}
-                  >×</button>
+                  >
+                    ×
+                  </button>
+
                 </div>
               ))}
+
             </div>
 
             <button
@@ -432,6 +487,7 @@ export default function Finder() {
             >
               + Add Stat Filter
             </button>
+
           </div>
 
           {/* Search button */}
@@ -456,13 +512,16 @@ export default function Finder() {
           >
             {loading ? 'Searching…' : 'Find Players'}
           </button>
+
         </div>
 
         {/* Results */}
         {searched && !loading && (
           <div className="fade-in">
+
             <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 14 }}>
               <h2 style={{ fontSize: 18, fontWeight: 700, margin: 0 }}>Results</h2>
+
               <span style={{
                 background: 'var(--navbar)',
                 borderRadius: 20,
@@ -475,6 +534,7 @@ export default function Finder() {
             </div>
 
             {results.length === 0 ? (
+
               <div style={{
                 padding: 40,
                 textAlign: 'center',
@@ -485,16 +545,21 @@ export default function Finder() {
               }}>
                 No players matched your filters.
               </div>
+
             ) : (
+
               <div style={{
                 borderRadius: 10,
                 border: '1.5px solid color-mix(in srgb, var(--navbar) 60%, transparent)',
                 overflow: 'hidden',
               }}>
+
                 <div style={{ overflowX: 'auto' }}>
                   <table style={{ width: '100%', borderCollapse: 'collapse', minWidth: 500 }}>
+
                     <thead>
                       <tr style={{ background: 'color-mix(in srgb, var(--navbar) 30%, transparent)' }}>
+
                         <th style={{
                           padding: '10px 16px',
                           textAlign: 'left',
@@ -509,6 +574,7 @@ export default function Finder() {
                         }}>
                           Player
                         </th>
+
                         <th style={{
                           padding: '10px 12px',
                           textAlign: 'center',
@@ -522,6 +588,7 @@ export default function Finder() {
                         }}>
                           Age
                         </th>
+
                         {statFilters.map((filter, idx) => (
                           <th key={idx} style={{
                             padding: '10px 12px',
@@ -539,12 +606,15 @@ export default function Finder() {
                             {availableStats.find(s => s.key === filter.stat)?.label || filter.stat}
                           </th>
                         ))}
+
                       </tr>
                     </thead>
+
                     <tbody>
+
                       {results.map((player, rowIdx) => (
                         <tr
-                          key={player.PLAYER_ID}
+                          key={`${player.PLAYER_ID}-${season}`}
                           className="result-row"
                           style={{
                             borderBottom: '1px solid color-mix(in srgb, var(--foreground) 6%, transparent)',
@@ -552,7 +622,8 @@ export default function Finder() {
                             animationDelay: `${Math.min(rowIdx * 20, 400)}ms`,
                           }}
                         >
-                          <td style={{ padding: '10px 16px' }}>
+
+                          <td style={{ padding: '6px 16px' }}>
                             <Link
                               href={`/player/${player.PLAYER_ID}`}
                               style={{
@@ -560,11 +631,35 @@ export default function Finder() {
                                 textDecoration: 'none',
                                 fontWeight: 600,
                                 fontSize: 14,
+                                display: 'inline-flex',
+                                alignItems: 'center',
+                                gap: 10,
                               }}
                             >
+                              {player.HEADSHOT && (
+                                <img
+                                  src={player.HEADSHOT}
+                                  alt={player.PLAYER_NAME}
+                                  width={46}
+                                  height={46}
+                                  loading="lazy"
+                                  onError={e => { e.currentTarget.style.display = 'none'; }}
+                                  style={{
+                                    width: 46,
+                                    height: 46,
+                                    objectFit: 'cover',
+                                    objectPosition: 'center top',
+                                    borderRadius: '50%',
+                                    background: 'color-mix(in srgb, var(--navbar) 25%, transparent)',
+                                    flexShrink: 0,
+                                  }}
+                                />
+                              )}
+
                               {player.PLAYER_NAME}
                             </Link>
                           </td>
+
                           <td style={{
                             padding: '10px 12px',
                             textAlign: 'center',
@@ -574,28 +669,35 @@ export default function Finder() {
                           }}>
                             {player.AGE ?? '—'}
                           </td>
+
                           {statFilters.map((filter, idx) => {
                             let displayVal, pct;
 
                             if (filter.stat.startsWith('synergy:')) {
                               const [, typeGroup, playType] = filter.stat.split(':');
+
                               const match = (player.synergy || []).find(
                                 s => s.TYPE_GROUPING === typeGroup && s.PLAY_TYPE === playType
                               );
-                              displayVal = match?.PPP != null ? match.PPP.toFixed(2) : '—';
-                              pct = match?.PERCENTILE != null ? Math.round(match.PERCENTILE * 100) : null;
+
+                              displayVal = match?.PPP != null ? Number(match.PPP).toFixed(2) : '—';
+                              pct = match?.PERCENTILE != null ? Math.round(Number(match.PERCENTILE) * 100) : null;
+
                             } else {
-                              pct = Math.round((player[filter.stat] || 0) * 100);
-                              // Strip _pct suffix to get the values column name
+                              const percentileValue = player[filter.stat];
+                              pct = percentileValue != null ? Math.round(Number(percentileValue) * 100) : null;
+
                               const valueKey = filter.stat.replace(/_pct$/, '');
                               const rawVal = player.values?.[valueKey];
+
                               displayVal = rawVal != null
-                                ? (Number.isInteger(rawVal) ? rawVal : parseFloat(rawVal).toFixed(2))
-                                : `${pct}%`;
+                                ? (Number.isInteger(Number(rawVal)) ? Number(rawVal) : Number(rawVal).toFixed(2))
+                                : (pct != null ? `${pct}%` : '—');
                             }
 
                             return (
                               <td key={idx} style={{ padding: '10px 12px', textAlign: 'center' }}>
+
                                 <span style={{
                                   display: 'inline-block',
                                   fontFamily: 'var(--font-mono)',
@@ -605,6 +707,7 @@ export default function Finder() {
                                 }}>
                                   {displayVal}
                                 </span>
+
                                 {pct != null && (
                                   <div style={{
                                     fontSize: 9,
@@ -615,18 +718,24 @@ export default function Finder() {
                                     {pct}%ile
                                   </div>
                                 )}
+
                               </td>
                             );
                           })}
+
                         </tr>
                       ))}
+
                     </tbody>
                   </table>
                 </div>
+
               </div>
             )}
+
           </div>
         )}
+
       </div>
     </>
   );
