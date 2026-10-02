@@ -214,7 +214,7 @@ export default function Home() {
               </p>
               {/* Resume button */}
               <a
-                href="/Brian G Papiernik - 2025 Sports Resume.pdf"
+                href="/2026 Brian Papiernik Resume.pdf"
                 download
                 className="resume-btn"
                 style={{
