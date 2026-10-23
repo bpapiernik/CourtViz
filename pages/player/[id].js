@@ -364,12 +364,21 @@ export default function PlayerPage() {
   useEffect(() => {
     if (!id) return;
     const fetchRollingSeasons = async () => {
-      const { data, error } = await supabase
-        .from('player_shots')
-        .select('SEASON')
-        .eq('PLAYER_ID', id);
-      if (error || !data?.length) return;
-      const unique = [...new Set(data.map(r => r.SEASON))].sort().reverse();
+      const seen = new Set();
+      let from = 0;
+      while (true) {
+        const { data, error } = await supabase
+          .from('player_shots')
+          .select('SEASON')
+          .eq('PLAYER_ID', id)
+          .order('SEASON', { ascending: true })
+          .range(from, from + 999);
+        if (error || !data?.length) break;
+        data.forEach(r => seen.add(r.SEASON));
+        if (data.length < 1000) break;
+        from += 1000;
+      }
+      const unique = [...seen].sort().reverse();
       setRollingSeasons(unique);
       setRollingSeason(unique[0] ?? '');
     };
